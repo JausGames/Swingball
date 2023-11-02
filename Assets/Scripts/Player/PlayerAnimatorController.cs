@@ -59,9 +59,12 @@ public class PlayerAnimatorController : MonoBehaviour
 
         animator.SetFloat("Speed", 
                 controller.OnSlope() ? 
-                controller.GetSlopeSpeed().magnitude / (controller.MAX_SPEED * 2f)
+                controller.GetSlopeSpeed().magnitude / (controller.MAX_SPEED * 1.5f)
                 : 
-                VectorOperation.GetFlatVector(controller.Body.velocity).magnitude / (controller.MAX_SPEED * 2f) * Mathf.Sign(Vector3.Dot(transform.forward, controller.Body.velocity))
+                VectorOperation.GetFlatVector(controller.Body.velocity).magnitude / (controller.MAX_SPEED * 1.5f) * Vector3.Dot(transform.forward, controller.Body.velocity.normalized)
+            );
+        animator.SetFloat("SpeedX", 
+                VectorOperation.GetFlatVector(controller.Body.velocity).magnitude / (controller.MAX_SPEED * 1.5f) * Vector3.Dot(transform.right, controller.Body.velocity.normalized)
             );
 
         if (controller.StartJumping)
