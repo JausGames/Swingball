@@ -5132,6 +5132,7 @@ GameObject:
   - component: {fileID: 3094020201962929165}
   - component: {fileID: 4979734388490404129}
   - component: {fileID: 320368068069157094}
+  - component: {fileID: 5171080784023419449}
   m_Layer: 3
   m_Name: OnlinePlayer
   m_TagString: Untagged
@@ -5177,6 +5178,8 @@ MonoBehaviour:
   healthbar: {fileID: 0}
   lookAtTransform: {fileID: 2756438136503333484}
   isResurecting: 0
+  audioSource: {fileID: 320368068069157094}
+  lowPass: {fileID: 5171080784023419449}
 --- !u!114 &8450636839588246214
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5502,6 +5505,31 @@ AudioSource:
     m_PostInfinity: 2
     m_RotationOrder: 4
   reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!169 &5171080784023419449
+AudioLowPassFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3678103632357136259}
+  m_Enabled: 0
+  serializedVersion: 3
+  m_LowpassResonanceQ: 1
+  lowpassLevelCustomCurve:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3

@@ -49,6 +49,8 @@ public class Ball : NetworkBehaviour
     [Header("SFX")]
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private AudioSource loopAudioSource;
+    [SerializeField] private AudioSource slowMoAudioSource;
+    [SerializeField] private AudioLowPassFilter lowPass;
     [SerializeField] private AudioClip  hitclip;
     [SerializeField] private AudioClip  lobClip;
     [SerializeField] private AudioClip  smashClip;
@@ -58,13 +60,15 @@ public class Ball : NetworkBehaviour
     private float lobSpeed = 8f;
     private float minPitch = .8f;
     private float maxPitch = 2f;
-
+    private float idleTime;
+    private long startIdleTime;
     [SerializeField] private long endIdle;
 
     public MatchManager Match { get => match; set => match = value; }
     public Rigidbody Body { get => body; set => body = value; }
     public Collider FloorCollider { get => floorCollider; set => floorCollider = value; }
     public UnityEvent OnIdleOverEvent { get => onIdleOverEvent; set => onIdleOverEvent = value; }
+    internal State State1 { get => state; set => state = value; }
 
     // Update is called once per frame
     void Update()
@@ -118,16 +122,59 @@ public class Ball : NetworkBehaviour
                 }
                 break;
             case State.Idle:
-                Debug.Log("Ball, Update : endTime = " + endIdle);
-                Debug.Log("Ball, Update : Now.Ticks = " + System.DateTime.Now.Ticks);
+                Debug.Log($"Ball, Update : startIdleTime {startIdleTime}, endIdle {endIdle}, Now { System.DateTime.Now.Ticks}");
+                Debug.Log($"Ball, Update : endIdle - Now {endIdle - System.DateTime.Now.Ticks}");
+                var lapse = endIdle - startIdleTime;
+
+                float avancement = (float)(System.DateTime.Now.Ticks - startIdleTime) / (float)lapse;
+
+                var maxPitch = 1f;
+                var minPitch = 0.05f;
+                var maxFilter = 22000f;
+                var minFilter = 120f;
+
+                //  __________
+                //      try put impact sound at the end of slowmo
+                //      try stop sounds while slow mo then restart
+                //  __________
+
+                if (avancement < .5f)
+                {
+                    var percent = avancement / .5f;
+                    var processPercent = Mathf.Pow(percent, .25f);
+                    Debug.Log($"Ball, Update : pitch down = {slowMoAudioSource.pitch}, processPercent {processPercent}");
+                    slowMoAudioSource.pitch = Mathf.Lerp(maxPitch, minPitch, processPercent);
+                    lowPass.cutoffFrequency = Mathf.Lerp(maxFilter, minFilter, processPercent);
+                    //ownerObj.AudioSource.pitch = Mathf.Lerp(maxPitch, minPitch, processPercent);
+                    //ownerObj.LowPass.cutoffFrequency = Mathf.Lerp(maxFilter, minFilter, processPercent);
+                }
+
+                if (avancement >= .5f)
+                {
+                    var percent = (avancement - .5f) / .5f;
+                    var processPercent = Mathf.Pow(percent, 4f);
+                    Debug.Log($"Ball, Update : pitch up = {slowMoAudioSource.pitch}, processPercent {processPercent}");
+                    slowMoAudioSource.pitch = Mathf.Lerp(minPitch, maxPitch, processPercent);
+                    lowPass.cutoffFrequency = Mathf.Lerp(minFilter, maxFilter, processPercent);
+                    //ownerObj.AudioSource.pitch = Mathf.Lerp(minPitch, maxPitch, processPercent);
+                    //ownerObj.LowPass.cutoffFrequency = Mathf.Lerp(minFilter, maxFilter, processPercent);
+                }
+
+
+
 
                 if (endIdle < System.DateTime.Now.Ticks)
                 {
+                    ownerObj.AudioSource.pitch = 1f;
+                    ownerObj.AudioSource.Play();
+                    ownerObj.LowPass.enabled = false;
+                    lowPass.enabled = false;
                     body.isKinematic = false;
                     state = State.Normal;
                     body.velocity = speed;
                     desync = false;
                     onIdleOverEvent.Invoke();
+                    slowMoAudioSource.Stop();
                 }
                 break;
             default:
@@ -328,7 +375,7 @@ public class Ball : NetworkBehaviour
         SetBallHitClientRpc(this.owner, currSpeed, direction, speed);
 
         SetIdleTime();
-        SetIdleTimeClientRpc(endIdle);
+        SetIdleTimeClientRpc(endIdle, idleTime, startIdleTime);
 
         //transform.position = GetPredictedPosition(timestamp, oldPos, speed);
     }
@@ -376,18 +423,25 @@ public class Ball : NetworkBehaviour
         SetBallSmashClientRpc(this.owner, currSpeed, direction, speed);
 
         SetIdleTime();
-        SetIdleTimeClientRpc(endIdle);
+        SetIdleTimeClientRpc(endIdle, idleTime, startIdleTime);
 
         //transform.position = GetPredictedPosition(timestamp, oldPos, speed);
     }
 
     [ClientRpc]
-    private void SetIdleTimeClientRpc(long endIdle)
+    private void SetIdleTimeClientRpc(long endIdle, float idleTime, long startIdleTime)
     {
         body.velocity = Vector3.zero;
         state = State.Idle;
         body.isKinematic = true;
+        lowPass.enabled = true;
         this.endIdle = endIdle;
+        this.startIdleTime = startIdleTime;
+        this.idleTime = idleTime;
+
+        Debug.Log($"Ball, SetIdleTimeClientRpc : start {startIdleTime}, end {endIdle}");
+
+        slowMoAudioSource.Play();
     }
 
     private void SetIdleTime()
@@ -395,8 +449,12 @@ public class Ball : NetworkBehaviour
         body.velocity = Vector3.zero;
         state = State.Idle;
         body.isKinematic = true;
+        ownerObj.AudioSource.Stop();
 
-        endIdle = System.DateTime.Now.AddSeconds((currSpeed / maxSpeed) * .5f).Ticks;
+        idleTime = (currSpeed / maxSpeed) * .5f;
+
+        startIdleTime = System.DateTime.Now.Ticks;
+        endIdle = System.DateTime.Now.AddSeconds(idleTime).Ticks;
     }
 
     private void FindNewSpeed()

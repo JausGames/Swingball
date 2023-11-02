@@ -54,7 +54,7 @@ public class WeaponCollider : MonoBehaviour
 
         var ball = other.GetComponentInParent<Ball>();
 
-        if (ball && !touched.Contains(ball))
+        if (ball && !touched.Contains(ball) && ball.State1 != Ball.State.Idle)
         {
             touched.Add(ball);
             switch (state)

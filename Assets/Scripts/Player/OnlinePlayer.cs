@@ -34,6 +34,9 @@ public class OnlinePlayer : NetworkBehaviour
     public HealthBar Healthbar { get => healthbar; set => healthbar = value; }
     public float MaxHealth { get => maxHealth; set => maxHealth = value; }
     public bool IsHurt { get => isHurt; set => isHurt = value; }
+
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioLowPassFilter lowPass;
     public Vector3 hitDirection
     {
         get
@@ -53,6 +56,8 @@ public class OnlinePlayer : NetworkBehaviour
 
     public bool DeadFromFalling { get => deadFromFalling; set => deadFromFalling = value; }
     public bool SlowMotion { get => slowMotion; set => slowMotion = value; }
+    public AudioSource AudioSource { get => audioSource; set => audioSource = value; }
+    public AudioLowPassFilter LowPass { get => lowPass; set => lowPass = value; }
 
     private void Update()
     {
