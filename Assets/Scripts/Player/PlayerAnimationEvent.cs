@@ -12,6 +12,8 @@ public class PlayerAnimationEvent : MonoBehaviour
     [SerializeField] AudioClip swingLob;
     [SerializeField] AudioClip swingSmash;
 
+    public AudioSource Source { get => source; set => source = value; }
+
 
     // Start is called before the first frame update
     void Start()
@@ -19,31 +21,38 @@ public class PlayerAnimationEvent : MonoBehaviour
         weapon = GetComponentInChildren<WeaponCollider>();
     }
 
+
     public void ActivateWeaponEvent()
     {
-        weapon.IsActive(true);
-        source.PlayOneShot(swingNormal);
+        Debug.Log("PlayerAnimationEvent, ActivateWeaponEvent");
+        //weapon.IsActive(true);
+        //source.PlayOneShot(swingNormal);
     }
     public void DeactivateWeaponEvent()
     {
-        weapon.IsActive(false);
+        Debug.Log("PlayerAnimationEvent, DeactivateWeaponEvent");
+        //weapon.IsActive(false);
     }
     public void ActivateSmashWeaponEvent()
     {
-        weapon.IsActive(true);
-        source.PlayOneShot(swingSmash);
+        Debug.Log("PlayerAnimationEvent, ActivateSmashWeaponEvent");
+        //weapon.IsActive(true);
+        //source.PlayOneShot(swingSmash);
     }
     public void DeactivateSmashWeaponEvent()
     {
-        weapon.IsActive(false);
+        Debug.Log("PlayerAnimationEvent, DeactivateSmashWeaponEvent");
+        //weapon.IsActive(false);
     }
     public void ActivateLobWeaponEvent()
     {
-        weapon.IsActive(true, WeaponCollider.State.Lob);
-        source.PlayOneShot(swingLob);
+        Debug.Log("PlayerAnimationEvent, ActivateLobWeaponEvent");
+        //weapon.IsActive(true, WeaponCollider.State.Lob);
+        //source.PlayOneShot(swingLob);
     }
     public void DeactivateLobWeaponEvent()
     {
-        weapon.IsActive(false, WeaponCollider.State.Lob);
+        Debug.Log("PlayerAnimationEvent, DeactivateLobWeaponEvent");
+        //weapon.IsActive(false, WeaponCollider.State.Lob);
     }
 }

@@ -118,8 +118,8 @@ public class WalkState : MovementState
 
 public class SprintState : MovementState
 {
-    private float speedMultiplier = 1.7f;
-    private float redirectMultiplier = .3f;
+    private float speedMultiplier = 1.5f;
+    private float redirectMultiplier = .2f;
 
     public SprintState(MovementStatus status) : base(status)
     {

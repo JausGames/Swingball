@@ -15,10 +15,11 @@ public class WeaponCollider : MonoBehaviour
     [SerializeField] List<ParticleSystem> particles;
     [SerializeField] OnlinePlayer owner;
     [SerializeField] private bool isActive = false;
-    [SerializeField] private List<Ball> victims = new List<Ball>();
+    [SerializeField] private List<Ball> touched = new List<Ball>();
     private State state;
 
     private State State1 { get => state; set => state = value; }
+    public OnlinePlayer Owner { get => owner; set => owner = value; }
 
     private void Awake()
     {
@@ -39,23 +40,23 @@ public class WeaponCollider : MonoBehaviour
     {
         if (!isActive || !owner.IsOwner) return;
 
-        var isPlayer = layermask == (layermask | (1 << other.gameObject.layer));
+        var isBall = layermask == (layermask | (1 << other.gameObject.layer));
 
-        if (!isPlayer) return;
+        if (!isBall) return;
 
         /* var victim = other.GetComponentInParent<OnlinePlayer>();
 
-         if(victim && victim != owner && !victims.Contains(victim))
+         if(victim && victim != owner && !touched.Contains(victim))
          {
              victim.GetHit(damage);
-             victims.Add(victim);
+             touched.Add(victim);
          }*/
 
         var ball = other.GetComponentInParent<Ball>();
 
-        if (ball)
+        if (ball && !touched.Contains(ball))
         {
-            victims.Add(ball);
+            touched.Add(ball);
             switch (state)
             {
                 case State.Normal:
@@ -97,6 +98,6 @@ public class WeaponCollider : MonoBehaviour
         isActive = v;
         this.state = state;
         if (!v) foreach (var particle in particles) particle.Stop(); else foreach (var particle in particles) particle.Play();
-        if (v) victims.Clear();
+        if (v) touched.Clear();
     }
 }

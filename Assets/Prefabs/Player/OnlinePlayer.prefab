@@ -4976,7 +4976,7 @@ MonoBehaviour:
   - {fileID: 2366452578481729701}
   owner: {fileID: 0}
   isActive: 0
-  victims: []
+  touched: []
 --- !u!1 &2434382445472439092
 GameObject:
   m_ObjectHideFlags: 0
@@ -5240,8 +5240,8 @@ MonoBehaviour:
   walkable:
     serializedVersion: 2
     m_Bits: 1
-  SPEED: 1.5
-  MAX_SPEED: 5
+  SPEED: 1
+  MAX_SPEED: 7
   STOP_FORCE: 0.2
   ROTATION_SPEED: 300
   ANGLE_MULTIPLIER: 0.9
@@ -5432,7 +5432,7 @@ AudioSource:
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
   m_PlayOnAwake: 1
-  m_Volume: 0.2
+  m_Volume: 0.5
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -11165,7 +11165,7 @@ MonoBehaviour:
     Layer: 1
     OriginatingState: 2081823275
     DestinationState: 1080829965
-    TransitionDuration: 0.25
+    TransitionDuration: 0.1
     TriggerNameHash: 1080829965
     TransitionIndex: 0
   - IsCrossFadeExit: 0
@@ -11179,14 +11179,14 @@ MonoBehaviour:
     Layer: 1
     OriginatingState: 2081823275
     DestinationState: -954672470
-    TransitionDuration: 0.25
+    TransitionDuration: 0.1
     TriggerNameHash: -954672470
     TransitionIndex: 2
   - IsCrossFadeExit: 0
     Layer: 1
     OriginatingState: 2081823275
     DestinationState: 2009332796
-    TransitionDuration: 0.25
+    TransitionDuration: 0.1
     TriggerNameHash: 1080829965
     TransitionIndex: 3
   m_Animator: {fileID: 7448471282353050253}

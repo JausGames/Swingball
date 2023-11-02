@@ -34,6 +34,7 @@ public class Ball : NetworkBehaviour
     [SerializeField] List<ParticleSystem> particles;
     [SerializeField] TrailRenderer trail;
     [SerializeField] MeshRenderer renderer;
+    [SerializeField] SpriteRenderer spriteFloorTarget;
     [SerializeField] Collider selfCollider;
     [SerializeField] Collider floorCollider;
     [Header("Stats")]
@@ -219,6 +220,7 @@ public class Ball : NetworkBehaviour
             colorOverLifeTime.color = new ParticleSystem.MinMaxGradient(color, new Color(1f,1f,1f,0f));
         }
         renderer.material.color = color;
+        spriteFloorTarget.color= color;
         trail.material.SetColor("_Color01", color);
 
     }
@@ -241,6 +243,7 @@ public class Ball : NetworkBehaviour
             colorOverLifeTime.color = new ParticleSystem.MinMaxGradient(color, new Color(1f, 1f, 1f, 0f));
         }
         renderer.material.color = color;
+        spriteFloorTarget.color = color;
         trail.material.SetColor("_Color01", color);
 
     }

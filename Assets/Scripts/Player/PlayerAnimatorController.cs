@@ -23,9 +23,9 @@ public class PlayerAnimatorController : MonoBehaviour
         if (!player.IsOwner) return;
         if (!animator || !controller || !player || !combat) return;
 
-        if (player.SlowMotion)
+        if (player.SlowMotion && animator.speed != 0f)
             animator.speed = 0f;
-        else
+        else if (animator.speed != 1f)
             animator.speed = 1f;
 
         if(player.IsDying)

@@ -78,8 +78,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   weapon: {fileID: 0}
-  enable: 0
+  enable: 1
+  enabled: 0
   disable: 1
+  disabled: 0
+  waitEnableTime: 0.25
+  waitDisableTime: 0.4
+  clip: {fileID: 8300000, guid: 70a3adede9dbe1c48a97044fec3f7dfc, type: 3}
+  source: {fileID: 0}
+  state: 0
 --- !u!1102 &-7823583651644981441
 AnimatorState:
   serializedVersion: 6
@@ -752,8 +759,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   weapon: {fileID: 0}
-  enable: 0
+  enable: 1
+  enabled: 0
   disable: 1
+  disabled: 0
+  waitEnableTime: 0.02
+  waitDisableTime: 0.17
+  clip: {fileID: 8300000, guid: 799a11f44aafd3e45a2db1cee5c2c7ce, type: 3}
+  source: {fileID: 0}
+  state: 1
 --- !u!1101 &-2986361725816428193
 AnimatorStateTransition:
   m_ObjectHideFlags: 1
@@ -920,8 +934,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   weapon: {fileID: 0}
-  enable: 0
+  enable: 1
+  enabled: 0
   disable: 1
+  disabled: 0
+  waitEnableTime: 0.05
+  waitDisableTime: 0.15
+  clip: {fileID: 8300000, guid: 686d137af9ecc60408872b38a4f3709f, type: 3}
+  source: {fileID: 0}
+  state: 0
 --- !u!1101 &-1443517606701438121
 AnimatorStateTransition:
   m_ObjectHideFlags: 1
@@ -1766,7 +1787,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   weapon: {fileID: 0}
   enable: 0
+  enabled: 0
   disable: 0
+  disabled: 0
+  waitEnableTime: 0
+  waitDisableTime: 0
+  clip: {fileID: 0}
+  source: {fileID: 0}
+  state: 0
 --- !u!1101 &2962497797069411952
 AnimatorStateTransition:
   m_ObjectHideFlags: 1
@@ -1929,8 +1957,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   weapon: {fileID: 0}
-  enable: 0
+  enable: 1
+  enabled: 0
   disable: 1
+  disabled: 0
+  waitEnableTime: 0.2
+  waitDisableTime: 0.4
+  clip: {fileID: 8300000, guid: 686d137af9ecc60408872b38a4f3709f, type: 3}
+  source: {fileID: 0}
+  state: 0
 --- !u!114 &4211542571687293570
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -1945,7 +1980,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   weapon: {fileID: 0}
   enable: 0
+  enabled: 0
   disable: 0
+  disabled: 0
+  waitEnableTime: 0
+  waitDisableTime: 0
+  clip: {fileID: 0}
+  source: {fileID: 0}
+  state: 0
 --- !u!1102 &4427190887154362956
 AnimatorState:
   serializedVersion: 6
