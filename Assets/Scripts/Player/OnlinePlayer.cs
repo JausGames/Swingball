@@ -115,15 +115,15 @@ public class OnlinePlayer : NetworkBehaviour
         SubmitGetHitRequestServerRpc(damage);
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    internal void TryResurectServerRpc(bool withEvent = true)
+    /*[ServerRpc(RequireOwnership = false)]
+    internal void TryResurect(bool withEvent = true)
     {
         Debug.Log("OnlinePlayer, TryResurectServerRpc");
         if (IsOwner)
             StartCoroutine(Resurect(withEvent));
         else
             ResurectPlayerClientRpc(withEvent);
-    }
+    }*/
 
     private IEnumerator Resurect(bool withEvent)
     {
@@ -141,7 +141,7 @@ public class OnlinePlayer : NetworkBehaviour
     }
 
     [ClientRpc]
-    private void ResurectPlayerClientRpc(bool withEvent)
+    public void ResurectPlayerClientRpc(bool withEvent)
     {
         Debug.Log("OnlinePlayer, ResurectPlayerClientRpc");
         if (IsOwner)

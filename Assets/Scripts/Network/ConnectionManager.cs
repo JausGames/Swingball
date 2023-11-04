@@ -16,9 +16,19 @@ public class ConnectionManager : MonoBehaviour
 
     [SerializeField] private GameObject playerPrefab;
     [SerializeField] private UNetTransport transport;
+    [SerializeField] bool startServerAuto = false;
 
     private void Start()
     {
+        ip_address.onSubmit.AddListener(delegate { transport.ConnectAddress = ip_address.text; });
+
+#if UNITY_EDITOR
+        Debug.unityLogger.logEnabled = true;
+#else
+ Debug.unityLogger.logEnabled = false;
+#endif
+
+
         button_Host.onClick.AddListener(Host);
         button_Server.onClick.AddListener(Server);
         button_Client.onClick.AddListener(Client);
@@ -26,6 +36,9 @@ public class ConnectionManager : MonoBehaviour
         NetworkManager.Singleton.OnServerStarted += HandleServerStarted;
         NetworkManager.Singleton.OnClientConnectedCallback += HandleClientConnected;
         NetworkManager.Singleton.OnClientDisconnectCallback += HandleClientDisconnect;
+
+        if (startServerAuto)
+            Server();
     }
     void OnGUI()
     {
@@ -83,7 +96,6 @@ public class ConnectionManager : MonoBehaviour
     }
     void Client()
     {
-        transport.ConnectAddress = ip_address.text;
         NetworkManager.Singleton.StartClient();
     }
 

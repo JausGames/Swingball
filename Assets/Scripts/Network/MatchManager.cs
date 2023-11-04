@@ -35,6 +35,7 @@ public class MatchManager : NetworkBehaviour
     public List<Transform> Spawns { get => spawns; set => spawns = value; }
     public Collider FloorCollider { get => floorCollider; set => floorCollider = value; }
 
+    #region Set game up
     public IEnumerator AskSetUpGame()
     {
         if (IsServer)
@@ -47,8 +48,8 @@ public class MatchManager : NetworkBehaviour
                 Debug.Log("MatchManager, AskSetUpGame : SetUpPlayerClientRpc, i = " + i);
                 /*if (players[i].IsOwner && IsHost)
                 {
-                    players[i].ResurectEvent.AddListener(delegate { TryInstantiateBallServerRpc(i); });
-                    Debug.Log("MatchManager, AskSetUpGame : TryInstantiateBallServerRpc, i = " + i);
+                    players[i].ResurectEvent.AddListener(delegate { TryInstantiateBall(i); });
+                    Debug.Log("MatchManager, AskSetUpGame : TryInstantiateBall, i = " + i);
                 }*/
             }
 
@@ -58,38 +59,18 @@ public class MatchManager : NetworkBehaviour
 
             yield return new WaitForSeconds(1f);
 
-            if (Players.Length >= 2)
-            {
-                var rnd = UnityEngine.Random.Range(0, 1);
-                TryInstantiateBallServerRpc(rnd);
-                //ball.ChangeOwner(0);
-                //ball.ChangeOwnerClientRpc(0);
-            }
+            Debug.Log("MatchManager, AskSetUpGame : Players.Length  = " + Players.Length);
+
+            var rnd = UnityEngine.Random.Range(0, 1);
+            TryInstantiateBall(rnd);
+            //ball.ChangeOwner(0);
+            //ball.ChangeOwnerClientRpc(0);
+
         }
 
     }
 
 
-    private void ReplacePlayers()
-    {
-        for (int i = 0; i < Players.Length; i++)
-        {
-            //Players[i].transform.position = spawns[i].position;
-            Players[i].ReplacePlayerClientRpc(spawns[i].position, spawns[i].rotation);
-            if (Players[i].isDead.Value) Players[i].IsResurecting = true;
-        }
-    }
-
-    internal void InstantiateBall(int target, int increment = 0)
-    {
-        Debug.Log("MatchManager, InstantiateBall");
-        if (ball && ball.GetComponent<NetworkObject>() && ball.GetComponent<NetworkObject>().IsSpawned)
-            ball.GetComponent<NetworkObject>().Despawn();
-
-        ball = Instantiate(ballPrefab, ballSpawn.position, Quaternion.identity, null).GetComponent<Ball>();
-        ball.GetComponent<NetworkObject>().Spawn();
-        ball.SetUpBall(this, target, increment);
-    }
 
     [ClientRpc]
     private void SetUpUiClientRpc()
@@ -106,7 +87,7 @@ public class MatchManager : NetworkBehaviour
 
         if (players[nb].IsOwner)
         {
-            players[nb].ResurectEvent.AddListener(delegate { TryInstantiateBallServerRpc(nb == 0 ? 1 : 0); });
+            players[nb].ResurectEvent.AddListener(delegate { TryInstantiateBallServerRpc(nb == 0 ? 0 : 1); });
             Debug.Log("MatchManager, SetUpPlayerClientRpc : nb = " + nb);
         }
     }
@@ -158,13 +139,41 @@ public class MatchManager : NetworkBehaviour
         if (Players[0] != null && Players[1] != null)
             StartCoroutine(AskSetUpGame());
     }
+    #endregion
+    #region Instanciate ball
+    //[ServerRpc(RequireOwnership = false)]
+    internal void TryInstantiateBall(int target = 0, bool quickRestart = false, int increment = 0)
+    {
+        Debug.Log("MatchManager, TryInstantiateBall : target = " + target);
+        StartCoroutine(quickRestart ? QuickRestartBall(target, increment) : RestartBall(target));
+        StartCountdownClientRpc();
+    }
 
     [ServerRpc(RequireOwnership = false)]
     internal void TryInstantiateBallServerRpc(int target = 0, bool quickRestart = false, int increment = 0)
     {
-        Debug.Log("MatchManager, TryInstantiateBallServerRpc : target = " + target);
-        StartCoroutine(quickRestart ? QuickRestartBall(target, increment) : RestartBall(target));
-        StartCountdownClientRpc();
+        TryInstantiateBall(target, quickRestart, increment);
+    }
+
+    private void ReplacePlayers()
+    {
+        for (int i = 0; i < Players.Length; i++)
+        {
+            //Players[i].transform.position = spawns[i].position;
+            Players[i].ReplacePlayerClientRpc(spawns[i].position, spawns[i].rotation);
+            if (Players[i].isDead.Value) Players[i].IsResurecting = true;
+        }
+    }
+
+    internal void InstantiateBall(int target, int increment = 0)
+    {
+        Debug.Log("MatchManager, InstantiateBall");
+        if (ball && ball.GetComponent<NetworkObject>() && ball.GetComponent<NetworkObject>().IsSpawned)
+            ball.GetComponent<NetworkObject>().Despawn();
+
+        ball = Instantiate(ballPrefab, ballSpawn.position, Quaternion.identity, null).GetComponent<Ball>();
+        ball.GetComponent<NetworkObject>().Spawn();
+        ball.SetUpBall(this, target, increment);
     }
     [ClientRpc]
     private void StartCountdownClientRpc()
@@ -217,14 +226,15 @@ public class MatchManager : NetworkBehaviour
     private IEnumerator QuickRestartBall(int target = 0, int increment = 0)
     {
         ReplacePlayers();
-        ResetHealthPlayers();
+        //ResetHealthPlayers();
         Debug.Log("MatchManager, RestartBall : target = " + target);
 
         yield return new WaitForSeconds(3f);
 
         InstantiateBall(target, increment);
     }
-
+    #endregion
+    #region Death
     private void ProcessDeath(int i)
     {
         if (ball && ball.GetComponent<NetworkObject>() && ball.GetComponent<NetworkObject>().IsSpawned)
@@ -235,9 +245,9 @@ public class MatchManager : NetworkBehaviour
         lifestocks[i]--;
 
         if (lifestocks[i] == 0)
-            GameOver(Players[i]);
+            GameOver(i);
         else
-            GetNetworkObject(Players[i].NetworkObjectId).GetComponent<OnlinePlayer>().TryResurectServerRpc();
+            GetNetworkObject(Players[i].NetworkObjectId).GetComponent<OnlinePlayer>().ResurectPlayerClientRpc(true);
 
         SubmitLifeLostClientRpc(i, lifestocks[i]);
     }
@@ -258,37 +268,56 @@ public class MatchManager : NetworkBehaviour
             lifestockUis[1].SetLifeLeft(lifestocks[i]);
         }
     }
+    #endregion
+    #region Gameover & restart
 
-    private void GameOver(OnlinePlayer loser)
+    private void GameOver(int loserNb)
     {
-        Debug.Log("MatchManager, GameOver : onlinePlayer = " + loser.OwnerClientId);
-
-        restartCanvas.gameObject.SetActive(true);
+        var winnerId = loserNb == 0 ? 1 : 0;
+        ShowRestartClientRpc(winnerId);
     }
 
+    [ClientRpc]
+    private void ShowRestartClientRpc(int winnerId)
+    {
+        if(players[winnerId].IsOwner)
+        {
+            restartCanvas.gameObject.SetActive(true);
+            Cursor.lockState = CursorLockMode.None;
+        }
+    }
 
     public void RestartWholeGame()
     {
-        RestartGame();
+        restartCanvas.gameObject.SetActive(false);
+        Cursor.lockState = CursorLockMode.Locked;
+
+        RestartGameServerRpc();
     }
 
-    private void RestartGame()
+    [ServerRpc(RequireOwnership = false)]
+    private void RestartGameServerRpc()
     {
-        restartCanvas.gameObject.SetActive(false);
 
         SubmitResetLifeClientRpc();
+        ResetLifeStocks();
         ResetHealthPlayers();
         ResurectPlayers();
 
         var rnd = UnityEngine.Random.Range(0, 1);
         Debug.Log("MatchManager, RestartGame : rnd = " + rnd);
 
-        TryInstantiateBallServerRpc(rnd);
+        TryInstantiateBall(rnd);
 
     }
 
     [ClientRpc]
     private void SubmitResetLifeClientRpc()
+    {
+        ResetLifeStocks();
+    }
+
+    private void ResetLifeStocks()
     {
         for (int i = 0; i < Players.Length; i++)
         {
@@ -317,7 +346,8 @@ public class MatchManager : NetworkBehaviour
         foreach(var pl in players)
         {
             if(pl.isDead.Value) 
-                pl.TryResurectServerRpc(false);
+                pl.ResurectPlayerClientRpc(false);
         }
     }
+    #endregion
 }

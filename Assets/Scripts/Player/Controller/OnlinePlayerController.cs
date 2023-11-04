@@ -230,6 +230,8 @@ public class OnlinePlayerController : NetworkBehaviour
     }
     internal void SetSlowMo(bool value)
     {
+        Debug.Log($"PlayerController, SetSlowMo : value = {value}");
+
         body.isKinematic = value;
     }
 }

@@ -71,7 +71,7 @@ public class Ball : NetworkBehaviour
     internal State State1 { get => state; set => state = value; }
 
     // Update is called once per frame
-    void Update()
+    void LateUpdate()
     {
 
         switch (state)
@@ -109,29 +109,29 @@ public class Ball : NetworkBehaviour
             case State.NoOwner:
                 speed += Physics.gravity * Time.deltaTime;
                 body.velocity = speed;
-                if (IsServer && transform.position.y < -1f)
+                if (IsServer && transform.position.y < -15f)
                 {
                     int ownerNb = -1;
                     for(int i = 0; i < match.Players.Length; i++)
                     {
-                        if (match.Players[i].OwnerClientId != owner)
+                        if (match.Players[i].OwnerClientId == owner)
                             ownerNb = i;
                     }
                     enabled = false;
-                    match.TryInstantiateBallServerRpc(ownerNb, true, increment);
+                    match.TryInstantiateBall(ownerNb, true, increment);
                 }
                 break;
             case State.Idle:
-                Debug.Log($"Ball, Update : startIdleTime {startIdleTime}, endIdle {endIdle}, Now { System.DateTime.Now.Ticks}");
-                Debug.Log($"Ball, Update : endIdle - Now {endIdle - System.DateTime.Now.Ticks}");
+                Debug.Log($"Ball, Update : startIdleTime {startIdleTime}, endIdle {endIdle}, Now { System.DateTime.Now.ToUniversalTime().Ticks}");
+                Debug.Log($"Ball, Update : endIdle - Now {endIdle - System.DateTime.Now.ToUniversalTime().Ticks}");
                 var lapse = endIdle - startIdleTime;
 
-                float avancement = (float)(System.DateTime.Now.Ticks - startIdleTime) / (float)lapse;
+                float avancement = (float)(System.DateTime.Now.ToUniversalTime().Ticks - startIdleTime) / (float)lapse;
 
                 var maxPitch = 1f;
                 var minPitch = 0.05f;
                 var maxFilter = 22000f;
-                var minFilter = 120f;
+                var minFilter = 100f;
 
                 //  __________
                 //      try put impact sound at the end of slowmo
@@ -163,7 +163,7 @@ public class Ball : NetworkBehaviour
 
 
 
-                if (endIdle < System.DateTime.Now.Ticks)
+                if (endIdle < System.DateTime.Now.ToUniversalTime().Ticks)
                 {
                     ownerObj.AudioSource.pitch = 1f;
                     ownerObj.AudioSource.Play();
@@ -174,6 +174,7 @@ public class Ball : NetworkBehaviour
                     body.velocity = speed;
                     desync = false;
                     onIdleOverEvent.Invoke();
+                    onIdleOverEvent.RemoveAllListeners();
                     slowMoAudioSource.Stop();
                 }
                 break;
@@ -260,7 +261,7 @@ public class Ball : NetworkBehaviour
 
         if (IsServer && !IsHost) return;
 
-        var color = match.Players[nb].IsOwner ? selfColor : oppsColor;
+        var color = ownerObj.IsOwner ? selfColor : oppsColor;
         foreach(var prtc in particles)
         {
             var colorOverLifeTime = prtc.colorOverLifetime;
@@ -357,7 +358,7 @@ public class Ball : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     private void SetBallHitServerRpc(ulong owner, ulong ownerPlayerObject, float timestamp, Vector3 oldPos, Vector3 direction)
     {
-        var nb = owner == match.Players[0].OwnerClientId ? 1 : 0;
+        var nb = owner == match.Players[0].OwnerClientId ? 0 : 1;
         ChangeOwner(nb);
 
         FindNewSpeed();
@@ -383,7 +384,7 @@ public class Ball : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     private void SetBallLobServerRpc(ulong owner, ulong ownerPlayerObject, float timestamp, Vector3 oldPos, Vector3 direction)
     {
-        var nb = owner == match.Players[0].OwnerClientId ? 1 : 0;
+        var nb = owner == match.Players[0].OwnerClientId ? 0 : 1;
         RemoveOwner(nb);
 
         SetLobSpeed();
@@ -404,7 +405,7 @@ public class Ball : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     private void SetBallSmashServerRpc(ulong owner, ulong ownerPlayerObject, float timestamp, Vector3 oldPos, Vector3 direction)
     {
-        var nb = owner == match.Players[0].OwnerClientId ? 1 : 0;
+        var nb = owner == match.Players[0].OwnerClientId ? 0 : 1;
         ChangeOwner(nb);
 
         FindNewSmashSpeed();
@@ -451,10 +452,10 @@ public class Ball : NetworkBehaviour
         body.isKinematic = true;
         ownerObj.AudioSource.Stop();
 
-        idleTime = (currSpeed / maxSpeed) * .5f;
+        idleTime = (currSpeed / maxSpeed) * .5f + 0.4f;
 
-        startIdleTime = System.DateTime.Now.Ticks;
-        endIdle = System.DateTime.Now.AddSeconds(idleTime).Ticks;
+        startIdleTime = System.DateTime.Now.ToUniversalTime().Ticks;
+        endIdle = System.DateTime.Now.ToUniversalTime().AddSeconds(idleTime).Ticks;
     }
 
     private void FindNewSpeed()
@@ -487,7 +488,7 @@ public class Ball : NetworkBehaviour
     [ClientRpc]
     private void SetBallHitClientRpc(ulong owner, float currSpeed, Vector3 direction, Vector3 speed)
     {
-        var nb = owner == match.Players[0].OwnerClientId ? 1 : 0;
+        var nb = owner == match.Players[0].OwnerClientId ? 0 : 1;
 
         this.currSpeed = currSpeed;
         this.direction = direction;
@@ -522,7 +523,7 @@ public class Ball : NetworkBehaviour
     [ClientRpc]
     private void SetBallSmashClientRpc(ulong owner, float currSpeed, Vector3 direction, Vector3 speed)
     {
-        var nb = owner == match.Players[0].OwnerClientId ? 1 : 0;
+        var nb = owner == match.Players[0].OwnerClientId ? 0 : 1;
 
         this.currSpeed = currSpeed;
         this.direction = direction;
@@ -541,14 +542,14 @@ public class Ball : NetworkBehaviour
     private void SynchroniseBallClientRpc(Vector3 position, Vector3 speed)
     {
         if (desync) return;
-        if ((transform.position - position).magnitude > 1.5f)
+        /*if ((transform.position - position).magnitude > 2f)
             transform.position = position;
-        else
-            transform.position = Vector3.MoveTowards(transform.position, position, Time.deltaTime * 5f);
+        else*/
+            transform.position = Vector3.MoveTowards(transform.position, position, Time.deltaTime * .1f);
 
-        if ((this.speed - speed).magnitude > 1.5f)
+        /*if ((this.speed - speed).magnitude > .5f)
             this.speed = speed;
-        else
-            this.speed = Vector3.MoveTowards(this.speed, speed, Time.deltaTime * 5f);
+        else*/
+            this.speed = Vector3.MoveTowards(this.speed, speed, Time.deltaTime * .1f);
     }
 }

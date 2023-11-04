@@ -2,13 +2,18 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SetAttackLayerActive : StateMachineBehaviour
+public class SetLayerInactive : StateMachineBehaviour
 {
-    // OnStateEnter is called when a transition starts and the state machine starts to evaluate this state
+    [SerializeField]int[] layersNb = { 2 };
+    [SerializeField]bool onStart = true;
+    [SerializeField]bool onEnd = false;
+    // OnStateEnter is called when a tr
+    // ansition starts and the state machine starts to evaluate this state
     override public void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
-        animator.SetLayerWeight(1, 1f);
-        animator.SetLayerWeight(2, 0f);
+        if(onStart)
+            foreach(int nb in layersNb)
+                animator.SetLayerWeight(nb, 0f);
     }
 
     // OnStateUpdate is called on each Update frame between OnStateEnter and OnStateExit callbacks
@@ -20,8 +25,9 @@ public class SetAttackLayerActive : StateMachineBehaviour
     // OnStateExit is called when a transition ends and the state machine finishes evaluating this state
     override public void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
-        animator.SetLayerWeight(1, 0f);
-        animator.SetLayerWeight(2, 0f);
+        if (onEnd)
+            foreach (int nb in layersNb)
+                animator.SetLayerWeight(nb, 0f);
     }
 
     // OnStateMove is called right after Animator.OnAnimatorMove()
