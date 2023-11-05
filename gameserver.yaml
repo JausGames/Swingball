@@ -14,8 +14,8 @@ spec:
         image: jausseran/swingballserver:latest
         resources:
           requests:
-            memory: "64Mi"
-            cpu: "10m"
+            memory: 128Mi
+            cpu: 128m
           limits:
             memory: "128Mi"
-            cpu: "50m"
+            cpu: 128m
