@@ -2855,7 +2855,7 @@ MonoBehaviour:
   MaxConnections: 100
   MaxSentMessageQueueSize: 128
   ConnectAddress: 51.103.121.124
-  ConnectPort: 7777
+  ConnectPort: 7184
   ServerListenPort: 7777
   MessageSendMode: 0
 --- !u!114 &613506435
@@ -3116,7 +3116,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   healthIntervalSecond: 5
   healthEnabled: 1
-  logEnabled: 0
+  logEnabled: 1
 --- !u!1001 &651206900
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -88,6 +88,7 @@ public class ConnectionManager : MonoBehaviour
     }
     void Server()
     {
+        TryConnectToAgonesAsync();
         //if (inputName.text == "") return;
         // Hook up password approval check
         NetworkManager.Singleton.ConnectionApprovalCallback += ApprovalCheck;
@@ -126,7 +127,6 @@ public class ConnectionManager : MonoBehaviour
     }
     private void HandleServerStarted()
     {
-        TryConnectToAgonesAsync();
         canvas.SetActive(false);
         // Temporary workaround to treat host as client
         if (NetworkManager.Singleton.IsHost)
