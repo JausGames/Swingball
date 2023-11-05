@@ -1,0 +1,9 @@
+apiVersion: "allocation.agones.dev/v1"
+kind: GameServerAllocation
+metadata:
+  namespace: gameserver
+  name: gameserverallocation
+spec:
+  required:
+    matchLabels:
+      agones.dev/fleet: gamefleet
