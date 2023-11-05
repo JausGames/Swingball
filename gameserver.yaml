@@ -11,7 +11,7 @@ spec:
     spec:
       containers:
       - name: game-server
-        image: jausseran/swingballserver:latest
+        image: jausseran/swingballserver
         resources:
           requests:
             memory: 128Mi
