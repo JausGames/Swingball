@@ -3,15 +3,15 @@ kind: GameServer
 metadata:
   generateName: "swing-server-"
 spec:
+  players:
+    # set this GameServer's initial player capacity to 10
+    initialCapacity: 2
   ports:
   - name: default
     portPolicy: Dynamic
     containerPort: 7777
   template:
     spec:
-      players:
-        # set this GameServer's initial player capacity to 10
-        initialCapacity: 2
       containers:
       - name: swing-server
         image: jausseran/swingballserver:latest
