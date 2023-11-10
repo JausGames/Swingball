@@ -1,4 +1,9 @@
+using Agones;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UNET;
 using UnityEngine;
@@ -17,6 +22,25 @@ public class ConnectionManager : MonoBehaviour
     [SerializeField] private GameObject playerPrefab;
     [SerializeField] private UNetTransport transport;
     [SerializeField] bool startServerAuto = false;
+    private AgonesAlphaSdk agones;
+
+
+    Ping ping;
+    List<int> pingsArray = new List<int>();
+    int pingCount = 50;
+
+    [SerializeField] private bool localTest = false;
+
+    public int Ping
+    {
+        get
+        {
+            if (pingsArray.Count == 0)
+                return 0;
+            else
+                return pingsArray.Sum() / pingsArray.Count;
+        }
+    }
 
     private void Start()
     {
@@ -51,19 +75,35 @@ public class ConnectionManager : MonoBehaviour
 
     async void TryConnectToAgonesAsync()
     {
-        var agones = GetComponent<Agones.AgonesSdk>();
-        Debug.Log("Agones: TryConnectToAgonesAsync");
-        bool connected = await agones.Connect();
-        if (!connected)
+
+        agones = GetComponent<Agones.AgonesAlphaSdk>();
+        agones.enabled = true;
+        bool ok = await agones.Connect();
+        if (ok)
         {
-            Debug.Log("Agones: Connect() failed");
-            return;
+            Debug.Log(("Server - Connected"));
+        }
+        else
+        {
+            Debug.Log(("Server - Failed to connect, exiting"));
+#if UNITY_EDITOR == false
+            Application.Quit(1);
+#endif
         }
 
-        Debug.Log("Agones: .. connected");
-
-        Debug.Log("Agones: Marking as ready...");
-        bool readied = await agones.Ready();
+        ok = await agones.Ready();
+        if (ok)
+        {
+            Debug.Log($"Server - Ready");
+            //agones.SetPlayerCapacity(2);
+        }
+        else
+        {
+            Debug.Log($"Server - Ready failed");
+#if UNITY_EDITOR == false
+            Application.Quit();
+#endif
+        }
     }
 
     private void OnDestroy()
@@ -75,6 +115,17 @@ public class ConnectionManager : MonoBehaviour
         NetworkManager.Singleton.OnClientConnectedCallback -= HandleClientConnected;
         NetworkManager.Singleton.OnClientDisconnectCallback -= HandleClientDisconnect;
 
+    }
+    private void Update()
+    {
+        if (NetworkManager.Singleton.IsClient && ping != null)
+        {
+            if (ping.isDone)
+            {
+                pingsArray.Add(ping.time);
+                ping = new Ping(transport.ConnectAddress);
+            }
+        }
     }
 
     void Host()
@@ -89,6 +140,7 @@ public class ConnectionManager : MonoBehaviour
     void Server()
     {
         TryConnectToAgonesAsync();
+
         //if (inputName.text == "") return;
         // Hook up password approval check
         NetworkManager.Singleton.ConnectionApprovalCallback += ApprovalCheck;
@@ -97,6 +149,41 @@ public class ConnectionManager : MonoBehaviour
     }
     void Client()
     {
+        if (!localTest)
+            CheckForServers();
+        else
+        {
+            // Set password ready to send to the server to validate
+            NetworkManager.Singleton.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes("player01");
+            NetworkManager.Singleton.StartClient();
+        }
+    }
+
+    // Update is called once per frame
+    void CheckForServers()
+    {
+        var http = gameObject.AddComponent<HttpRequestHelper>();
+        CoroutineWithData cd = new CoroutineWithData(this, http.GetServerList());
+        StartCoroutine(WaitForGameServers(cd));
+    }
+    private IEnumerator WaitForGameServers(CoroutineWithData corout)
+    {
+        //wait
+        while (!(corout.result is string) || corout.result == null)
+        {
+            Debug.Log("EditorUI, WaitForGameServers : data is null");
+            yield return false;
+        }
+        //do stuff
+        var gs = JsonUtility.FromJson<GameServer>((string)corout.result);
+        //unetTransport.ConnectAddress = 
+
+        Debug.Log(gs);
+
+        transport.ConnectAddress = gs.ip;
+        transport.ConnectPort = gs.port;
+
+        NetworkManager.Singleton.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes("player01");
         NetworkManager.Singleton.StartClient();
     }
 
@@ -105,18 +192,34 @@ public class ConnectionManager : MonoBehaviour
         Debug.Log("MainMenu, HandleClientConnected : clientid = " + clientId);
         if (NetworkManager.Singleton.IsServer || NetworkManager.Singleton.IsHost)
         {
-
+            _ = AddPlayerAndAllocate(clientId);
         }
 
         // Are we the client that is connecting?
         if (clientId == NetworkManager.Singleton.LocalClientId)
         {
+            ping = new Ping(transport.ConnectAddress);
             canvas.SetActive(false);
         }
     }
 
+    private async Task AddPlayerAndAllocate(ulong clientId)
+    {
+        var nb = await agones.GetPlayerCount();
+
+        if (nb == 0) _ = agones.Allocate();
+
+        _ = agones.PlayerConnect(clientId.ToString());
+    }
+
     private void HandleClientDisconnect(ulong clientId)
     {
+        Debug.Log("MainMenu, HandleClientDisconnect : clientid = " + clientId);
+        if (NetworkManager.Singleton.IsServer || NetworkManager.Singleton.IsHost)
+        {
+            _ = AgonesDisconectPlayerAsync(clientId);
+        }
+
         // Are we the client that is disconnecting?
         if (clientId == NetworkManager.Singleton.LocalClientId)
         {
@@ -125,6 +228,15 @@ public class ConnectionManager : MonoBehaviour
             //leaveButton.SetActive(false);
         }
     }
+
+    private async Task AgonesDisconectPlayerAsync(ulong clientId)
+    {
+        var ok = await agones.PlayerDisconnect(clientId.ToString());
+        var nb = await agones.GetPlayerCount();
+        if (nb == 0)
+            await agones.Shutdown();
+    }
+
     private void HandleServerStarted()
     {
         canvas.SetActive(false);
@@ -144,8 +256,11 @@ public class ConnectionManager : MonoBehaviour
         var connectionData = request.Payload;
         var playerName = Encoding.Default.GetString(connectionData);
 
+        var gameReturnStatus = GetConnectStatus(playerName);
+
         // Your approval logic determines the following values
-        response.Approved = true;
+        response.Approved = gameReturnStatus == ConnectStatus.Success ? true : false;
+
         response.CreatePlayerObject = false;
 
         // The prefab hash value of the NetworkPrefab, if null the default NetworkManager player prefab is used
@@ -157,22 +272,59 @@ public class ConnectionManager : MonoBehaviour
         // Rotation to spawn the player object (if null it uses the default of Quaternion.identity)
         response.Rotation = Quaternion.identity;
 
+        response.Reason = gameReturnStatus.ToString();
+
         // If additional approval steps are needed, set this to true until the additional steps are complete
         // once it transitions from true to false the connection approval response will be processed.
         response.Pending = false;
-        Debug.Log("connection approval : name = " + playerName + ", id = " + clientId);
-        Debug.Log("connection approval : matchManager.Players count = " + matchManager.Players.Length);
+        if (response.Approved)
+        {
+            Debug.Log("connection approval : name = " + playerName + ", id = " + clientId);
+            Debug.Log("connection approval : matchManager.Players count = " + matchManager.Players.Length);
 
 
-        var pos = matchManager.Players[0] == null ? matchManager.Spawns[0] : matchManager.Spawns[1];
+            var pos = matchManager.Players[0] == null ? matchManager.Spawns[0] : matchManager.Spawns[1];
 
-        GameObject go = Instantiate(playerPrefab, pos.position, Quaternion.identity);
-        var networkObject = go.GetComponent<NetworkObject>();
-        networkObject.SpawnWithOwnership(clientId, false);
+            GameObject go = Instantiate(playerPrefab, pos.position, Quaternion.identity);
+            var networkObject = go.GetComponent<NetworkObject>();
+            networkObject.SpawnWithOwnership(clientId, false);
 
-        matchManager.AddPlayer(go.GetComponent<OnlinePlayer>());
+            matchManager.AddPlayer(go.GetComponent<OnlinePlayer>());
+
+        }
     }
 
+    public async Task ShutdownServer()
+    {
+        foreach (var client in NetworkManager.Singleton.ConnectedClientsList)
+            NetworkManager.Singleton.DisconnectClient(client.ClientId);
+
+        var shut = await agones.Shutdown();
+    }
+
+    enum ConnectStatus
+    {
+        Success,
+        LoggedInAgain,
+        ServerFull,
+        IncompatibleBuildType
+    }
+    ConnectStatus GetConnectStatus(string connectionPayload)
+    {
+        if (NetworkManager.Singleton.ConnectedClientsIds.Count >= 2)
+        {
+            return ConnectStatus.ServerFull;
+        }
+
+        /*if (connectionPayload.isDebug != Debug.isDebugBuild)
+        {
+            return ConnectStatus.IncompatibleBuildType;
+        }*/
+
+        /*return SessionManager<SessionPlayerData>.Instance.IsDuplicateConnection(connectionPayload.playerId) ?
+            ConnectStatus.LoggedInAgain : ConnectStatus.Success;*/
+        return ConnectStatus.Success;
+    }
 
     static void StatusLabels()
     {
@@ -180,7 +332,7 @@ public class ConnectionManager : MonoBehaviour
             "Host" : NetworkManager.Singleton.IsServer ? "Server" : "Client";
 
         GUILayout.Label("Mode: " + mode);
-        if(mode == "Client")
+        if (mode == "Client")
             GUILayout.Label("Ping: " + NetworkManager.Singleton.NetworkConfig.NetworkTransport.GetCurrentRtt(NetworkManager.ServerClientId));
     }
 

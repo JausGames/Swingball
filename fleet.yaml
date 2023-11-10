@@ -36,6 +36,9 @@ spec:
         foo: gamefleet
     # GameServer specification
     spec:
+      players:
+        # set this GameServer's initial player capacity to 10
+        initialCapacity: 2
       ports:
       - name: default
         portPolicy: Dynamic
@@ -52,12 +55,12 @@ spec:
       template:
         spec:
           containers:
-          - name: game-server
-            image: jausseran/agoneserver:1.11
+          - name: swing-server
+            image: jausseran/swingballserver:latest
             resources:
               requests:
-              memory: "64Mi"
-              cpu: "10m"
-            limits:
-              memory: "128Mi"
-              cpu: "50m"
+                memory: 128Mi
+                cpu: 128m
+              limits:
+                memory: 1024Mi
+                cpu: 512m

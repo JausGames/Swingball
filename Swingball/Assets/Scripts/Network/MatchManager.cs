@@ -274,7 +274,10 @@ public class MatchManager : NetworkBehaviour
     private void GameOver(int loserNb)
     {
         var winnerId = loserNb == 0 ? 1 : 0;
-        ShowRestartClientRpc(winnerId);
+
+        _ = FindObjectOfType<ConnectionManager>().ShutdownServer();
+
+        //ShowRestartClientRpc(winnerId);
     }
 
     [ClientRpc]

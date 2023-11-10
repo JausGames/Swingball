@@ -1,8 +1,11 @@
 apiVersion: "agones.dev/v1"
 kind: GameServer
 metadata:
-  generateName: "game-server-"
+  generateName: "swing-server-"
 spec:
+  players:
+    # set this GameServer's initial player capacity to 10
+    initialCapacity: 2
   ports:
   - name: default
     portPolicy: Dynamic
@@ -10,12 +13,12 @@ spec:
   template:
     spec:
       containers:
-      - name: game-server
+      - name: swing-server
         image: jausseran/swingballserver:latest
         resources:
           requests:
-            memory: "64Mi"
-            cpu: "10m"
+            memory: 128Mi
+            cpu: 128m
           limits:
-            memory: "128Mi"
-            cpu: "50m"
+            memory: 1024Mi
+            cpu: 512m
