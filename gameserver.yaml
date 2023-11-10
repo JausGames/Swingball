@@ -1,4 +1,4 @@
-apiVersion: "agones.dev/v1alpha1"
+apiVersion: "agones.dev/v1"
 kind: GameServer
 metadata:
   generateName: "swing-server-"
