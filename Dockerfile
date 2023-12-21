@@ -4,6 +4,8 @@ WORKDIR /Swingball
 
 COPY Builds/Server/ ./
 
+RUN apt install libvulkan1
+
 # workaround
 # wait until the sidecar is ready
 CMD chmod +x ./Swingball_server.x86_64 && sleep 1 && ./Swingball_server.x86_64
@@ -15,8 +17,8 @@ FROM golang:1.19-alpine  AS MatchMakingAPI
 
 WORKDIR /usr/src/app
 
-COPY FleetAPI/go.mod FleetAPI/go.sum FleetAPI/*.go ./ 
-COPY FleetAPI/.kube/config /root/.kube/
+COPY MatchMakingAPI/go.mod MatchMakingAPI/go.sum MatchMakingAPI/*.go ./ 
+COPY MatchMakingAPI/.kube/config /root/.kube/
 
 RUN go mod download && go mod verify
 

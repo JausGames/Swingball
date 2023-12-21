@@ -4,10 +4,12 @@ using UnityEngine;
 
 public class SetAttackLayerInactive : StateMachineBehaviour
 {
+    PlayerAnimatorController controller;
     // OnStateEnter is called when a transition starts and the state machine starts to evaluate this state
     override public void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
-        animator.SetLayerWeight(1, 0f);
+        controller = animator.GetComponentInParent<PlayerAnimatorController>();
+        controller.SetLayer(1, 0f);
     }
 
     // OnStateUpdate is called on each Update frame between OnStateEnter and OnStateExit callbacks

@@ -1,4 +1,4 @@
-module example/hello
+module swingball/findserver
 
 go 1.20
 

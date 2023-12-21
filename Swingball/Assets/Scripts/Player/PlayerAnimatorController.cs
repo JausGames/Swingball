@@ -4,16 +4,17 @@ using UnityEngine;
 
 public class PlayerAnimatorController : MonoBehaviour
 {
-    [SerializeField] Animator animator;
-    OnlinePlayerController controller;
-    OnlinePlayer player;
-    OnlinePlayerCombat combat;
+    protected Animator animator;
+    protected PlayerController controller;
+    Player player;
+    protected PlayerCombat combat;
+    [SerializeField] bool[] enableLayer = new bool[3] { true, true, true };
 
     private void Awake()
     {
-        controller = GetComponent<OnlinePlayerController>();
-        combat = GetComponent<OnlinePlayerCombat>();
-        player = GetComponent<OnlinePlayer>();
+        controller = GetComponent<PlayerController>();
+        combat = GetComponent<PlayerCombat>();
+        player = GetComponent<Player>();
         animator = GetComponentInChildren<Animator>();
     }
 
@@ -28,7 +29,7 @@ public class PlayerAnimatorController : MonoBehaviour
         else
             animator.speed = 1f;
 
-        if(player.IsDying)
+        if (player.IsDying)
         {
             animator.SetTrigger("Dying");
             player.IsDying = false;
@@ -40,31 +41,48 @@ public class PlayerAnimatorController : MonoBehaviour
         }
         if (player.IsHurt)
         {
-            Debug.Log("IsHurt");
             animator.SetTrigger("GetHit");
             player.IsHurt = false;
+            player.InHurtAnim = true;
         }
 
-        if (combat.Attacking.Value && !player.IsDead)
+        if (combat.Moving.Value && CanAttack())
+        {
+            combat.Move(false);
+            animator.SetTrigger("MoveAction");
+
+        }
+        if (combat.DefensiveMove.Value && CanAttack())
+        {
+            combat.SpecialDefensive(false);
+            animator.SetTrigger("DefensiveMove");
+
+        }
+        else if (combat.Lobbing.Value && CanAttack())
+        {
+            combat.Lob(false);
+            animator.SetTrigger("Lob");
+        }
+        else if (combat.OffensiveMove.Value && CanAttack())
+        {
+            combat.SpecialOffensive(false);
+            animator.SetTrigger("OffensiveMove");
+        }
+        else if (combat.Attacking.Value && CanAttack())
         {
             combat.Attack(false);
             animator.SetTrigger("Attack");
 
         }
-        if (combat.Lobbing.Value && !player.IsDead)
-        {
-            combat.Lob(false);
-            animator.SetTrigger("Lob");
-        }
 
-        animator.SetFloat("Speed", 
-                controller.OnSlope() ? 
-                controller.GetSlopeSpeed().magnitude / (controller.MAX_SPEED * 1.5f)
-                : 
-                VectorOperation.GetFlatVector(controller.Body.velocity).magnitude / (controller.MAX_SPEED * 1.5f) * Vector3.Dot(transform.forward, controller.Body.velocity.normalized)
+        animator.SetFloat("Speed",
+                controller.OnSlope() ?
+                controller.GetSlopeSpeed().magnitude / (controller.Settings.MAX_SPEED * 1.5f)
+                :
+                VectorOperation.GetFlatVector(controller.Body.velocity).magnitude / (controller.Settings.MAX_SPEED * 1.5f) * Vector3.Dot(transform.forward, controller.Body.velocity.normalized)
             );
-        animator.SetFloat("SpeedX", 
-                VectorOperation.GetFlatVector(controller.Body.velocity).magnitude / (controller.MAX_SPEED * 1.5f) * Vector3.Dot(transform.right, controller.Body.velocity.normalized)
+        animator.SetFloat("SpeedX",
+                VectorOperation.GetFlatVector(controller.Body.velocity).magnitude / (controller.Settings.MAX_SPEED * 1.5f) * Vector3.Dot(transform.right, controller.Body.velocity.normalized)
             );
 
         if (controller.StartJumping)
@@ -78,5 +96,19 @@ public class PlayerAnimatorController : MonoBehaviour
         animator.SetBool("WallRight", controller.WallRight);
         animator.SetBool("WallLeft", controller.WallLeft);
 
+    }
+
+    public void EnableLayer(int nb, bool enable)
+    {
+        enableLayer[nb] = enable;
+    }
+    public void SetLayer(int nb, float value)
+    {
+        if (!enableLayer[nb]) return;
+        animator.SetLayerWeight(nb, value);
+    }
+    protected virtual bool CanAttack()
+    {
+        return !player.IsDead && !player.InHurtAnim;
     }
 }

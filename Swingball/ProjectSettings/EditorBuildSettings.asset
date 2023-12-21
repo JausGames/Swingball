@@ -6,6 +6,15 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/Sample/OnlineSampleScene.unity
+    path: Assets/Scenes/TibetScene.unity
     guid: 2cda990e2423bbf4892e6590ba056729
+  - enabled: 0
+    path: Assets/Scenes/MainMenu.unity
+    guid: 5dab04826e91c4246958b8db0850a325
+  - enabled: 0
+    path: Assets/Scenes/CyberScene.unity
+    guid: 1cfee1e6bd166cc4599e5d4cbe30abd0
+  - enabled: 0
+    path: Assets/Scenes/CityScene.unity
+    guid: 324c1b5b366bbed499f308cfe39833d6
   m_configObjects: {}

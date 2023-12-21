@@ -14,14 +14,14 @@ public enum MovementStatus
 }
 public class FiniteMovementStateMachine
 {
-    OnlinePlayerController motor;
+    PlayerController motor;
 
     [SerializeField] Dictionary<MovementStatus, MovementState> states;
     [SerializeField] MovementState currState;
 
     public MovementState CurrState { get => currState; set => currState = value; }
 
-    public FiniteMovementStateMachine(OnlinePlayerController motor)
+    public FiniteMovementStateMachine(PlayerController motor)
     {
         this.motor = motor;
         states = new Dictionary<MovementStatus, MovementState>() 
@@ -43,7 +43,6 @@ public class FiniteMovementStateMachine
         var result = currState.CheckTransitionState(motor);
         if (result != currState.Status)
         {
-            Debug.Log($"FiniteMovementStateMachine, CheckTransitionState : from {currState.Status} to {result}");
             currState.OnExitState(motor);
             states.TryGetValue(result, out currState);
             currState.OnEnterState(motor);

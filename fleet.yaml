@@ -4,7 +4,7 @@ kind: Fleet
 # https://v1-24.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#objectmeta-v1-meta
 metadata:
   namespace: gameserver
-  name: gamefleet
+  name: fleet
 spec:
   # the number of GameServers to keep Ready or Allocated in this Fleet
   replicas: 1
@@ -33,8 +33,9 @@ spec:
     # GameServer metadata
     metadata:
       labels:
-        foo: gamefleet
+        foo: fleet
     # GameServer specification
+      generateName: "server-"
     spec:
       players:
         # set this GameServer's initial player capacity to 10

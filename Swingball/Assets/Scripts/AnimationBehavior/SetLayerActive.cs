@@ -8,13 +8,15 @@ public class SetLayerActive : StateMachineBehaviour
     [SerializeField] bool onStart = true;
     [SerializeField] bool onStay = false;
     [SerializeField] bool onEnd = false;
+    PlayerAnimatorController controller;
     // OnStateEnter is called when a tr
     // ansition starts and the state machine starts to evaluate this state
     override public void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
+        controller = animator.GetComponentInParent<PlayerAnimatorController>();
         if (onStart)
             foreach (int nb in layersNb)
-                animator.SetLayerWeight(nb, 1f);
+                controller.SetLayer(nb, 1f);
     }
 
     // OnStateUpdate is called on each Update frame between OnStateEnter and OnStateExit callbacks
@@ -35,7 +37,7 @@ public class SetLayerActive : StateMachineBehaviour
     {
         if (onEnd)
             foreach (int nb in layersNb)
-                animator.SetLayerWeight(nb, 1f);
+                controller.SetLayer(nb, 1f);
     }
 
     // OnStateMove is called right after Animator.OnAnimatorMove()

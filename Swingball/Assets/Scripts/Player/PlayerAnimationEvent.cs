@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class PlayerAnimationEvent : MonoBehaviour
 {
+    private PlayerCombat combat;
     private WeaponCollider weapon;
 
 
@@ -19,40 +20,11 @@ public class PlayerAnimationEvent : MonoBehaviour
     void Start()
     {
         weapon = GetComponentInChildren<WeaponCollider>();
+        combat = GetComponentInParent<PlayerCombat>();
     }
 
-
-    public void ActivateWeaponEvent()
+    public void MoveActionEvent()
     {
-        Debug.Log("PlayerAnimationEvent, ActivateWeaponEvent");
-        //weapon.IsActive(true);
-        //source.PlayOneShot(swingNormal);
-    }
-    public void DeactivateWeaponEvent()
-    {
-        Debug.Log("PlayerAnimationEvent, DeactivateWeaponEvent");
-        //weapon.IsActive(false);
-    }
-    public void ActivateSmashWeaponEvent()
-    {
-        Debug.Log("PlayerAnimationEvent, ActivateSmashWeaponEvent");
-        //weapon.IsActive(true);
-        //source.PlayOneShot(swingSmash);
-    }
-    public void DeactivateSmashWeaponEvent()
-    {
-        Debug.Log("PlayerAnimationEvent, DeactivateSmashWeaponEvent");
-        //weapon.IsActive(false);
-    }
-    public void ActivateLobWeaponEvent()
-    {
-        Debug.Log("PlayerAnimationEvent, ActivateLobWeaponEvent");
-        //weapon.IsActive(true, WeaponCollider.State.Lob);
-        //source.PlayOneShot(swingLob);
-    }
-    public void DeactivateLobWeaponEvent()
-    {
-        Debug.Log("PlayerAnimationEvent, DeactivateLobWeaponEvent");
-        //weapon.IsActive(false, WeaponCollider.State.Lob);
+        combat.PerformMoveAction();
     }
 }

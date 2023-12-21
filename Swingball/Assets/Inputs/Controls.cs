@@ -98,6 +98,42 @@ public partial class @Controls : IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""DefensiveMove"",
+                    ""type"": ""Button"",
+                    ""id"": ""d7a6e946-b101-4a58-95a6-d0fdd04a385a"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""OffensiveMove"",
+                    ""type"": ""Button"",
+                    ""id"": ""52375ab7-82da-47cc-b336-e59736fa8ce6"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Special"",
+                    ""type"": ""Button"",
+                    ""id"": ""8b2aee93-b434-4599-babc-6e775492dbbe"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""MoveAction"",
+                    ""type"": ""Button"",
+                    ""id"": ""6bf76acc-968e-42c2-8b8a-4100a7450357"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -298,6 +334,83 @@ public partial class @Controls : IInputActionCollection2, IDisposable
                     ""action"": ""Lob"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""a925985d-7a96-4026-8645-63044843aa42"",
+                    ""path"": ""<Gamepad>/leftTrigger"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Gamepad"",
+                    ""action"": ""DefensiveMove"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""b00a8696-2ba1-4824-bda8-5ed676636fd4"",
+                    ""path"": ""<Mouse>/forwardButton"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard"",
+                    ""action"": ""DefensiveMove"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""5a14cc6d-fb57-4b21-9767-1eca1746a74c"",
+                    ""path"": ""<Gamepad>/rightTrigger"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Gamepad"",
+                    ""action"": ""OffensiveMove"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""2a7e134d-5824-457f-a659-85a9c3b211de"",
+                    ""path"": ""<Mouse>/backButton"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard"",
+                    ""action"": ""OffensiveMove"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""87600eaa-277c-4b71-8be0-de6d18a5de45"",
+                    ""path"": ""<Keyboard>/shift"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard"",
+                    ""action"": ""Special"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""a15719c2-e6be-4d43-9415-e9f29faeb37a"",
+                    ""path"": ""<Gamepad>/buttonWest"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Gamepad"",
+                    ""action"": ""MoveAction"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""5bb76172-a1fc-4c6d-a243-c39fe24c15a1"",
+                    ""path"": ""<Keyboard>/q"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard"",
+                    ""action"": ""MoveAction"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -342,6 +455,10 @@ public partial class @Controls : IInputActionCollection2, IDisposable
         m_Player_Jump = m_Player.FindAction("Jump", throwIfNotFound: true);
         m_Player_Sprint = m_Player.FindAction("Sprint", throwIfNotFound: true);
         m_Player_Crouch = m_Player.FindAction("Crouch", throwIfNotFound: true);
+        m_Player_DefensiveMove = m_Player.FindAction("DefensiveMove", throwIfNotFound: true);
+        m_Player_OffensiveMove = m_Player.FindAction("OffensiveMove", throwIfNotFound: true);
+        m_Player_Special = m_Player.FindAction("Special", throwIfNotFound: true);
+        m_Player_MoveAction = m_Player.FindAction("MoveAction", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -409,6 +526,10 @@ public partial class @Controls : IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_Jump;
     private readonly InputAction m_Player_Sprint;
     private readonly InputAction m_Player_Crouch;
+    private readonly InputAction m_Player_DefensiveMove;
+    private readonly InputAction m_Player_OffensiveMove;
+    private readonly InputAction m_Player_Special;
+    private readonly InputAction m_Player_MoveAction;
     public struct PlayerActions
     {
         private @Controls m_Wrapper;
@@ -421,6 +542,10 @@ public partial class @Controls : IInputActionCollection2, IDisposable
         public InputAction @Jump => m_Wrapper.m_Player_Jump;
         public InputAction @Sprint => m_Wrapper.m_Player_Sprint;
         public InputAction @Crouch => m_Wrapper.m_Player_Crouch;
+        public InputAction @DefensiveMove => m_Wrapper.m_Player_DefensiveMove;
+        public InputAction @OffensiveMove => m_Wrapper.m_Player_OffensiveMove;
+        public InputAction @Special => m_Wrapper.m_Player_Special;
+        public InputAction @MoveAction => m_Wrapper.m_Player_MoveAction;
         public InputActionMap Get() { return m_Wrapper.m_Player; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -454,6 +579,18 @@ public partial class @Controls : IInputActionCollection2, IDisposable
                 @Crouch.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnCrouch;
                 @Crouch.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnCrouch;
                 @Crouch.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnCrouch;
+                @DefensiveMove.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnDefensiveMove;
+                @DefensiveMove.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnDefensiveMove;
+                @DefensiveMove.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnDefensiveMove;
+                @OffensiveMove.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnOffensiveMove;
+                @OffensiveMove.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnOffensiveMove;
+                @OffensiveMove.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnOffensiveMove;
+                @Special.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnSpecial;
+                @Special.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnSpecial;
+                @Special.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnSpecial;
+                @MoveAction.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnMoveAction;
+                @MoveAction.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnMoveAction;
+                @MoveAction.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnMoveAction;
             }
             m_Wrapper.m_PlayerActionsCallbackInterface = instance;
             if (instance != null)
@@ -482,6 +619,18 @@ public partial class @Controls : IInputActionCollection2, IDisposable
                 @Crouch.started += instance.OnCrouch;
                 @Crouch.performed += instance.OnCrouch;
                 @Crouch.canceled += instance.OnCrouch;
+                @DefensiveMove.started += instance.OnDefensiveMove;
+                @DefensiveMove.performed += instance.OnDefensiveMove;
+                @DefensiveMove.canceled += instance.OnDefensiveMove;
+                @OffensiveMove.started += instance.OnOffensiveMove;
+                @OffensiveMove.performed += instance.OnOffensiveMove;
+                @OffensiveMove.canceled += instance.OnOffensiveMove;
+                @Special.started += instance.OnSpecial;
+                @Special.performed += instance.OnSpecial;
+                @Special.canceled += instance.OnSpecial;
+                @MoveAction.started += instance.OnMoveAction;
+                @MoveAction.performed += instance.OnMoveAction;
+                @MoveAction.canceled += instance.OnMoveAction;
             }
         }
     }
@@ -514,5 +663,9 @@ public partial class @Controls : IInputActionCollection2, IDisposable
         void OnJump(InputAction.CallbackContext context);
         void OnSprint(InputAction.CallbackContext context);
         void OnCrouch(InputAction.CallbackContext context);
+        void OnDefensiveMove(InputAction.CallbackContext context);
+        void OnOffensiveMove(InputAction.CallbackContext context);
+        void OnSpecial(InputAction.CallbackContext context);
+        void OnMoveAction(InputAction.CallbackContext context);
     }
 }

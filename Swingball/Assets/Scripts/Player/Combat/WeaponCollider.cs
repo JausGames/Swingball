@@ -1,31 +1,43 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.VFX;
 
+// Make sure the order is later than your LateUpdate script, say IK system, you can check the order at Edit->ProejectSettings->ScriptExecutionOrder
+//[DefaultExecutionOrder(11000)]
 public class WeaponCollider : MonoBehaviour
 {
     internal enum State
     {
         Normal,
+        Offensive,
+        Defensive,
         Lob
     }
 
     [SerializeField] LayerMask layermask;
     [SerializeField] float damage = 100f;
-    [SerializeField] List<ParticleSystem> particles;
-    [SerializeField] OnlinePlayer owner;
+    [SerializeField] List<ParticleSystem> particles = new List<ParticleSystem>();
+    [SerializeField] List<VisualEffect> effects = new List<VisualEffect>();
+    [SerializeField] Player owner;
     [SerializeField] private bool isActive = false;
     [SerializeField] private List<Ball> touched = new List<Ball>();
     private State state;
 
-    private State State1 { get => state; set => state = value; }
-    public OnlinePlayer Owner { get => owner; set => owner = value; }
+    public Player Owner { get => owner; set => owner = value; }
 
     private void Awake()
     {
-        owner = GetComponentInParent<OnlinePlayer>();
+        owner = GetComponentInParent<Player>();
     }
 
+    private void LateUpdate()
+    {
+        foreach (var prtl in particles)
+        {
+            //prtl.Simulate(Time.deltaTime, true, false, false);
+        }
+    }
 
     private void OnTriggerStay(Collider other)
     {
@@ -65,9 +77,11 @@ public class WeaponCollider : MonoBehaviour
                         if (ball.TryHitBall(owner, owner.hitDirection))
                         {
                             owner.SetSlowMo(true);
-                            ball.OnIdleOverEvent.AddListener(delegate {
+                            ball.OnIdleOverEvent.AddListener(delegate
+                            {
                                 owner.SetSlowMo(false);
-                                //ball.OnIdleOverEvent.RemoveAllListeners();
+                                owner.SubmitAddSpecialRequestServerRpc(ball.Speed.magnitude);
+                                ball.OnIdleOverEvent.RemoveAllListeners();
                             });
                         }
                     }
@@ -76,16 +90,32 @@ public class WeaponCollider : MonoBehaviour
                         if (ball.TrySmashBall(owner, owner.hitDirection))
                         {
                             owner.SetSlowMo(true);
-                            ball.OnIdleOverEvent.AddListener(delegate {
+                            ball.OnIdleOverEvent.AddListener(delegate
+                            {
                                 owner.SetSlowMo(false);
-                                //ball.OnIdleOverEvent.RemoveAllListeners();
+                                owner.SubmitAddSpecialRequestServerRpc(ball.Speed.magnitude);
+                                ball.OnIdleOverEvent.RemoveAllListeners();
                             });
                         }
                     }
 
                     break;
+                case State.Offensive:
+                    if ((owner.Controller.Grounded || owner.Controller.WallLeft || owner.Controller.WallRight)
+                        && ball.TrySpecialBall(owner, owner.hitDirection))
+                    {
+                        owner.SpecialOffensiveMove(ball);
+                    }
+                    break;
+                case State.Defensive:
+                    if ((owner.Controller.Grounded || owner.Controller.WallLeft || owner.Controller.WallRight)
+                        && ball.TrySpecialBall(owner, owner.hitDirection))
+                    {
+                        owner.SpecialDefensiveMove(ball);
+                    }
+                    break;
                 case State.Lob:
-                    ball.TryLobBall(owner, owner.hitDirection);
+                    ball.TryLobBall(owner, owner.GetLobDirection(), owner.GetLobSpeed());
                     break;
                 default:
                     break;
@@ -93,11 +123,21 @@ public class WeaponCollider : MonoBehaviour
         }
     }
 
-    internal void IsActive(bool v, State state = State.Normal)
+    internal void AddTouchedBall(Ball b)
+    {
+        touched.Add(b);
+    }
+
+    internal void IsActive(bool v, State state = State.Normal, int slashEffectNb = 0)
     {
         isActive = v;
         this.state = state;
-        if (!v) foreach (var particle in particles) particle.Stop(); else foreach (var particle in particles) particle.Play();
+        if (!v) foreach (var particle in particles) particle.Stop();
+        else
+        {
+            if (effects[slashEffectNb]) effects[slashEffectNb].Play();
+            foreach (var particle in particles) particle.Play();
+        }
         if (v) touched.Clear();
     }
 }

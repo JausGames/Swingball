@@ -1,0 +1,100 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7bd909de04afc5246aa262ab14e89a10, type: 3}
+  m_Name: Ninja
+  m_EditorClassIdentifier: 
+  ACCELERATION_CURVE:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: -2.0274386
+      outSlope: -2.0274386
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.06165415
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  SPEED: 1
+  MAX_SPEED: 8
+  STOP_FORCE: 0.2
+  ROTATION_SPEED: 300
+  ANGLE_MULTIPLIER: 0.9
+  JUMP_CURVE:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: -0.04681791
+      outSlope: -0.04681791
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.10075188
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: -0.3619375
+      outSlope: -0.3619375
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.07819551
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  JUMP_LENGTH: 0.12
+  JUMP_FORCE: 30
+  JUMP_IMPULSE: 8
+  FALLING_CURVE:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 2.4714124
+      outSlope: 2.4714124
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.04962406
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0.40474698
+      outSlope: 0.40474698
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.09323311
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  FALL_LENGTH: 0.5
+  FALL_FORCE: 60
+  wallCheckDistance: 0.4
+  WALL_JUMP_SIDE_FORCE: 5
+  WALL_JUMP_SIDE_IMPULSE: 15
+  SLIDE_LENGTH: 5

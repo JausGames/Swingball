@@ -18,14 +18,15 @@ limitations under the License.
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"net/http"
+	"os"
 	"path/filepath"
 
 	"agones.dev/agones/pkg/client/clientset/versioned"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
 	//
 	// Uncomment to load all auth plugins
 	// _ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -37,21 +38,39 @@ import (
 )
 
 func main() {
+
+	version := "0.1.0"
+	listenAddr := ":8080"
+	if val, ok := os.LookupEnv("FUNCTIONS_CUSTOMHANDLER_PORT"); ok {
+		listenAddr = ":" + val
+	}
 	//kubeconfig = flag.String("kubeconfig", "C:\\Users\\user\\Documents\\GO\\k8s\\.kube\\config", "absolute path to the kubeconfig file")
 	// use the current context in kubeconfig
 	agonesClient := GetAgonesClient()
 
-	http.HandleFunc("/servers", func(w http.ResponseWriter, r *http.Request) {
-		// Convert the byte slice to a string and print it
-		CRUD_Server_Index(agonesClient, w)
+	// http.HandleFunc("/servers", func(w http.ResponseWriter, r *http.Request) {
+	// 	// Convert the byte slice to a string and print it
+	// 	CRUD_Server_Index(agonesClient, w)
+	// })
+
+	http.HandleFunc("/api/findserver", func(w http.ResponseWriter, r *http.Request) {
+
+		var info PlayerGameInfo
+		err := json.NewDecoder(r.Body).Decode(&info)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		if info.GameVersion != version {
+			http.Error(w, "Wrong game version", http.StatusBadRequest)
+		} else {
+			CRUD_Server_MMFind(agonesClient, w)
+		}
+
 	})
 
-	http.HandleFunc("/servers/find", func(w http.ResponseWriter, r *http.Request) {
-		CRUD_Server_MMFind(agonesClient, w)
-
-	})
-
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	if err := http.ListenAndServe(listenAddr, nil); err != nil {
 		panic(err)
 	}
 
@@ -60,11 +79,11 @@ func main() {
 
 func GetAgonesClient() *versioned.Clientset {
 	var kubeconfig *string
-	if home := homedir.HomeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-	} else {
-		kubeconfig = flag.String("kubeconfig", "root\\.kube\\config", "absolute path to the kubeconfig file")
-	}
+	//if home := homedir.HomeDir(); home != "" {
+	kubeconfig = flag.String("kubeconfig", filepath.Join(".kube", "config"), "(optional) absolute path to the kubeconfig file")
+	//} else {
+	//kubeconfig = flag.String("kubeconfig", "root\\.kube\\config", "absolute path to the kubeconfig file")
+	//}
 
 	flag.Parse()
 
