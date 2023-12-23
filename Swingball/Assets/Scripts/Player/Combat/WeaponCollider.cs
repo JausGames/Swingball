@@ -26,6 +26,17 @@ public class WeaponCollider : MonoBehaviour
 
     public Player Owner { get => owner; set => owner = value; }
 
+    public void StopEffect(int id)
+    {
+        if (effects.Count > id)
+            effects[id].Reinit();
+    }
+    public void StartEffect(int id)
+    {
+        if(effects.Count > id)
+            effects[id].Play();
+    }
+
     private void Awake()
     {
         owner = GetComponentInParent<Player>();
@@ -115,6 +126,8 @@ public class WeaponCollider : MonoBehaviour
                     }
                     break;
                 case State.Lob:
+                    var dir = owner.GetLobDirection();
+                    var speed = owner.GetLobSpeed();
                     ball.TryLobBall(owner, owner.GetLobDirection(), owner.GetLobSpeed());
                     break;
                 default:
@@ -128,14 +141,14 @@ public class WeaponCollider : MonoBehaviour
         touched.Add(b);
     }
 
-    internal void IsActive(bool v, State state = State.Normal, int slashEffectNb = 0)
+    internal void IsActive(bool v, State state = State.Normal, int slashEffectNb = -1)
     {
         isActive = v;
         this.state = state;
         if (!v) foreach (var particle in particles) particle.Stop();
         else
         {
-            if (effects[slashEffectNb]) effects[slashEffectNb].Play();
+            if (slashEffectNb >= 0 && effects.Count > slashEffectNb) effects[slashEffectNb].Play();
             foreach (var particle in particles) particle.Play();
         }
         if (v) touched.Clear();

@@ -13,7 +13,7 @@ public class EnableDisableWeapon : StateMachineBehaviour
     [SerializeField] private float waitEnableTime;
     [SerializeField] private float waitDisableTime;
     [SerializeField] private int slashEffectNb = 0;
-    [SerializeField] private AudioClip clip;
+    [SerializeField] private List<AudioClip> clips;
     [SerializeField] private AudioSource source;
     [SerializeField] private WeaponCollider.State state = WeaponCollider.State.Normal;
 
@@ -30,7 +30,8 @@ public class EnableDisableWeapon : StateMachineBehaviour
     void EnableWeapon(bool value)
     {
         weapon.IsActive(value, state, slashEffectNb);
-        if(value) source.PlayOneShot(clip);
+        Debug.Log("EnableWeapon : val = " + value);
+        if(value) clips.ForEach(c => source.PlayOneShot(c));
     }
     // OnStateUpdate is called on each Update frame between OnStateEnter and OnStateExit callbacks
     override public void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)

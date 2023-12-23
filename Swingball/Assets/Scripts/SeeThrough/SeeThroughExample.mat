@@ -92,7 +92,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - Color_91F87372: {r: 15.999998, g: 1.0890051, b: 0, a: 1}
-    - _Color: {r: 1, g: 1, b: 1, a: 0.8}
+    - _Color: {r: 0, g: 0.3529412, b: 1, a: 0.8}
     - _DoubleSidedConstants: {r: 1, g: 1, b: -1, a: 0}
     - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []

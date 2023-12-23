@@ -49,6 +49,15 @@ public class Player : NetworkBehaviour
     public float MaxHealth { get => maxHealth; set => maxHealth = value; }
     public bool IsHurt { get => isHurt; set => isHurt = value; }
 
+    /// <summary>
+    /// Special is server write only, call the method from server RPC
+    /// </summary>
+    /// <param name="value">Amount to remove from special points</param>
+    internal void RemoveSpecialPoints(float value)
+    {
+        special.Value = Mathf.Max(0, special.Value - value);
+    }
+
     [SerializeField] private AudioSource audioSource;
 
 
@@ -240,6 +249,8 @@ public class Player : NetworkBehaviour
     {
         special.Value = Mathf.Min(100f, special.Value + point);
     }
+
+
 
     [ClientRpc]
     internal void SetUpBallClientRpc(ulong networkObjectId)

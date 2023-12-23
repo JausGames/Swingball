@@ -7,9 +7,9 @@ public class NinjaAnimatorController : PlayerAnimatorController
     public void OnBallTouchedDuringMoveAction()
     {
         if (!combat.IsOwner) return;
-        animator.SetTrigger("StopMoveAction");
         controller.Body.velocity = controller.Body.velocity.normalized * 4f;
         ((NinjaCombat)combat).PlayMirageParticles(false);
+        ((NinjaCombat)combat).Moving.Value = false;
         ((NinjaCombat)combat).PlayMirageParticlesServerRpc(false);
     }
 }

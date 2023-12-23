@@ -65,20 +65,14 @@ public abstract class PlayerCombat : NetworkBehaviour
     {
         if (IsOwner && enabled)
         {
+            Debug.Log("attacking : " + Attacking);
             SetAttacking(Attacking);
-            if (Attacking)
-                StartCoroutine(ResetAttackBoolIfInavailable());
         }
     }
 
     public void SetAttacking(bool Attacking)
     {
         this.attacking.Value = Attacking;
-    }
-    IEnumerator ResetAttackBoolIfInavailable()
-    {
-        yield return new WaitForSeconds(.02f);
-        SetAttacking(false);
     }
     public bool GetAttacking()
     {
@@ -91,19 +85,12 @@ public abstract class PlayerCombat : NetworkBehaviour
         if (IsOwner && player.CanSpecialMove(false) && enabled)
         {
             SetSpecialDefensive(performed);
-            if (performed)
-                StartCoroutine(ResetSpecialDefensiveBoolIfInavailable());
         }
     }
 
     public void SetSpecialDefensive(bool perfomed)
     {
         this.specialDefensive.Value = perfomed;
-    }
-    IEnumerator ResetSpecialDefensiveBoolIfInavailable()
-    {
-        yield return new WaitForSeconds(.02f);
-        SetSpecialDefensive(false);
     }
     public bool GetSpecialDefensive()
     {
@@ -117,19 +104,12 @@ public abstract class PlayerCombat : NetworkBehaviour
         if (IsOwner && player.CanSpecialMove(true) && enabled)
         {
             SetSpecialOffensive(performed);
-            if (performed)
-                StartCoroutine(ResetSpecialOffensiveBoolIfInavailable());
         }
     }
 
     public void SetSpecialOffensive(bool perfomed)
     {
         this.specialOffensive.Value = perfomed;
-    }
-    IEnumerator ResetSpecialOffensiveBoolIfInavailable()
-    {
-        yield return new WaitForSeconds(.02f);
-        SetSpecialOffensive(false);
     }
     public bool GetSpecialOffensive()
     {
@@ -143,18 +123,13 @@ public abstract class PlayerCombat : NetworkBehaviour
         if (IsOwner && enabled)
         {
             SetLobbing(lobbing);
-            if (lobbing)
-                StartCoroutine(ResetLobBoolIfInavailable());
+            /*if (lobbing)
+                StartCoroutine(ResetLobBoolIfInavailable());*/
         }
     }
     public void SetLobbing(bool lobbing)
     {
         this.lobbing.Value = lobbing;
-    }
-    IEnumerator ResetLobBoolIfInavailable()
-    {
-        yield return new WaitForSeconds(.02f);
-        SetLobbing(false);
     }
     public bool GetLobbing()
     {
@@ -164,26 +139,26 @@ public abstract class PlayerCombat : NetworkBehaviour
     #region Move
     public void Move(bool moving)
     {
-        if (IsOwner && enabled)
+        if (IsOwner)
         {
-            if (nextMoveAction <= Time.time && moving)
+            if (moving && CheckIfCanMoveAction())
             {
                 nextMoveAction = Time.time + moveActionCooldown;
-                StartCoroutine(ResetMoveBoolIfInavailable());
                 SetMoving(true);
             }
             else if (!moving)
                 SetMoving(false);
         }
     }
+
+    protected virtual bool CheckIfCanMoveAction()
+    {
+        return nextMoveAction <= Time.time && enabled;
+    }
+
     public void SetMoving(bool moving)
     {
         this.moving.Value = moving;
-    }
-    IEnumerator ResetMoveBoolIfInavailable()
-    {
-        yield return new WaitForSeconds(.02f);
-        SetMoving(false);
     }
     public bool GetMoving()
     {

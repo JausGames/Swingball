@@ -1,19 +1,29 @@
-# AgonesServerTest
+# Gameproject 
+
+## TODO list
+Sound FX : 
+- Ninja
+    - Footsteps
+    - Sound when defense move succeed
+- Knight 
+    - All
+
+# INFRA
 
 ## Build images : 
 `docker build --target GameServer -t jausseran/swingballserver .` 
 `docker build --target MatchMakingAPI -t jausseran/mmapi .` 
 
-## Run API : 
+## Run API local: 
 `docker run -d jausseran/mmapi -n mmapi` 
 
 ## Run gameserver : 
 
-### AZURE  : 
+AZURE  : 
 
 
 
-### Minikube using docker : 
+Minikube using docker : 
 
 ``` 
 minikube start --kubernetes-version v1.26.6 -p gamecluster

@@ -29,6 +29,7 @@ public class NinjaCombat : PlayerCombat
     [SerializeField] float dashTime = .5f;
     [SerializeField] LayerMask ballLayer;
     [SerializeField] AudioClip mirageClip;
+    [SerializeField] AudioClip ultiStartClip;
     [SerializeField] private Action nextMove = Action.Nothing;
 
     private void Start()
@@ -39,7 +40,15 @@ public class NinjaCombat : PlayerCombat
         inputs.StartOffensiveEvent.AddListener(delegate () { nextMove = Action.Offensive; });
         inputs.StartDefensiveEvent.AddListener(delegate () { nextMove = Action.Defensive; });
         inputs.StartMoveEvent.AddListener(delegate () { nextMove = Action.Nothing; });
+        specialOffensive.OnValueChanged += PlaySpecialOffSound;
     }
+
+    private void PlaySpecialOffSound(bool previousValue, bool newValue)
+    {
+        if (newValue)
+            player.AudioSource.PlayOneShot(ultiStartClip);
+    }
+
     protected override void SetLobSettings()
     {
         LobSettings = new LobSettings()
@@ -59,7 +68,7 @@ public class NinjaCombat : PlayerCombat
     [ServerRpc]
     private void RequestDefensiveMoveServerRpc()
     {
-        player.special.Value -= defensiveMoveValue;
+        player.RemoveSpecialPoints(defensiveMoveValue);
         RequestDefensiveMoveClientRpc();
     }
     [ClientRpc]
@@ -92,6 +101,15 @@ public class NinjaCombat : PlayerCombat
 
         ball.TryHitBall(player, direction);
 
+        weapon.StartEffect(3);
+
+        player.SetSlowMo(true);
+        ball.OnIdleOverEvent.AddListener(delegate
+        {
+            player.SetSlowMo(false);
+            ball.OnIdleOverEvent.RemoveAllListeners();
+        });
+
         ball.OnIdleOverEvent.AddListener(delegate
         {
             var flat = VectorOperation.GetFlatVector(direction);
@@ -120,19 +138,15 @@ public class NinjaCombat : PlayerCombat
                 switch (nextMove)
                 {
                     case Action.Strike:
+                    case Action.Offensive:
                         if (player.Controller.Grounded)
                             ball.TryHitBall(player, player.hitDirection);
                         else if (!player.Controller.Grounded)
                             ball.TrySmashBall(player, player.hitDirection);
                         break;
                     case Action.Lob:
-                        ball.TryLobBall(player, player.GetLobDirection(), player.GetLobSpeed());
-                        break;
-                    case Action.Offensive:
-                        SpecialOffensiveMove(ball);
-                        break;
                     case Action.Defensive:
-                        SpecialDefensiveMove(ball);
+                        ball.TryLobBall(player, player.GetLobDirection(), player.GetLobSpeed());
                         break;
                     default:
                     case Action.Move:
@@ -157,6 +171,7 @@ public class NinjaCombat : PlayerCombat
         else
             body.velocity = player.transform.forward * speed;
 
+        Moving.Value = false;
         StartCoroutine(WaitToStopCheckBall());
         PlayMirageParticles(true);
         PlayMirageParticlesServerRpc(true);
@@ -183,7 +198,7 @@ public class NinjaCombat : PlayerCombat
         }
         else
         {
-            player.transform.eulerAngles = new Vector3(0f, player.transform.eulerAngles.y, 0f); 
+            player.transform.eulerAngles = new Vector3(0f, player.transform.eulerAngles.y, 0f);
             meshRenderer.enabled = true;
             mirageParticles.Stop();
         }
@@ -202,4 +217,8 @@ public class NinjaCombat : PlayerCombat
         }
         return null;
     }
+    /*protected override bool CheckIfCanMoveAction()
+    {
+        return base.CheckIfCanMoveAction() && ;
+    }*/
 }

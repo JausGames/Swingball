@@ -16,6 +16,33 @@ public class PlayerAnimatorController : MonoBehaviour
         combat = GetComponent<PlayerCombat>();
         player = GetComponent<Player>();
         animator = GetComponentInChildren<Animator>();
+
+        combat.Attacking.OnValueChanged += OnAttackingChanged;
+        combat.Lobbing.OnValueChanged += OnControlChanged;
+        combat.DefensiveMove.OnValueChanged += OnDefensiveChanged;
+        combat.OffensiveMove.OnValueChanged += OnOffensiveChanged;
+        combat.Moving.OnValueChanged += OnMoveChanged;
+    }
+
+    private void OnAttackingChanged(bool previous, bool current)
+    {
+        animator.SetBool("Attack", current);
+    }
+    private void OnControlChanged(bool previous, bool current)
+    {
+        animator.SetBool("Control", current);
+    }
+    private void OnDefensiveChanged(bool previous, bool current)
+    {
+        animator.SetBool("Defensive", current);
+    }
+    private void OnOffensiveChanged(bool previous, bool current)
+    {
+        animator.SetBool("Offensive", current);
+    }
+    private void OnMoveChanged(bool previous, bool current)
+    {
+        animator.SetBool("Move", current);
     }
 
     // Update is called once per frame
@@ -44,35 +71,6 @@ public class PlayerAnimatorController : MonoBehaviour
             animator.SetTrigger("GetHit");
             player.IsHurt = false;
             player.InHurtAnim = true;
-        }
-
-        if (combat.Moving.Value && CanAttack())
-        {
-            combat.Move(false);
-            animator.SetTrigger("MoveAction");
-
-        }
-        if (combat.DefensiveMove.Value && CanAttack())
-        {
-            combat.SpecialDefensive(false);
-            animator.SetTrigger("DefensiveMove");
-
-        }
-        else if (combat.Lobbing.Value && CanAttack())
-        {
-            combat.Lob(false);
-            animator.SetTrigger("Lob");
-        }
-        else if (combat.OffensiveMove.Value && CanAttack())
-        {
-            combat.SpecialOffensive(false);
-            animator.SetTrigger("OffensiveMove");
-        }
-        else if (combat.Attacking.Value && CanAttack())
-        {
-            combat.Attack(false);
-            animator.SetTrigger("Attack");
-
         }
 
         animator.SetFloat("Speed",
