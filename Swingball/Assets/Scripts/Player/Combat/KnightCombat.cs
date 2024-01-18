@@ -5,14 +5,35 @@ using UnityEngine;
 
 public class KnightCombat : PlayerCombat
 {
+    [SerializeField] WeaponCollider baseWeaponCollider;
     [SerializeField] WeaponCollider weapon;
+    [SerializeField] GameObject holyWeapon;
+    [SerializeField] PlayerAnimationEvent playerEvent;
+
+    [SerializeField] List<ParticleSystem> enableHolyWeaponParticles;
+    [SerializeField] List<ParticleSystem> disableHolyWeaponParticles;
+
 
     private void Start()
     {
         //Time.timeScale = .2f;
         weapon = GetComponentInChildren<WeaponCollider>();
         specialDefensive.OnValueChanged += StopSpecialDefenseMoveVFX;
+        playerEvent.OffensiveEnabledEvent.AddListener(delegate { EnableHolyWeapon(true); });
+        playerEvent.OffensiveDisabledEvent.AddListener(delegate { EnableHolyWeapon(false); });
     }
+
+    private void EnableHolyWeapon(bool value)
+    {
+        holyWeapon.SetActive(value);
+        if(value)
+            enableHolyWeaponParticles.ForEach(p => p.Play());
+        else
+        {
+            enableHolyWeaponParticles.ForEach(p => p.Stop());
+        }
+    }
+
     public override void PerformMoveAction()
     {
         throw new System.NotImplementedException();

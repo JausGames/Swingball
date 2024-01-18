@@ -1,11 +1,18 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class PlayerAnimationEvent : MonoBehaviour
 {
     private PlayerCombat combat;
     private WeaponCollider weapon;
+
+
+    public UnityEvent OffensiveEnabledEvent = new UnityEvent();
+    public UnityEvent DefensiveEnabledEvent = new UnityEvent();
+    public UnityEvent OffensiveDisabledEvent = new UnityEvent();
+    public UnityEvent DefensiveDisabledEvent = new UnityEvent();
 
 
     [SerializeField] AudioSource source;
@@ -26,5 +33,21 @@ public class PlayerAnimationEvent : MonoBehaviour
     public void MoveActionEvent()
     {
         combat.PerformMoveAction();
+    }
+    public void OffensiveActionEvent()
+    {
+        OffensiveEnabledEvent.Invoke();
+    }
+    public void DefensiveActionEvent()
+    {
+        DefensiveEnabledEvent.Invoke();
+    }
+    public void OffensiveStopEvent()
+    {
+        OffensiveDisabledEvent.Invoke();
+    }
+    public void DefensiveStopEvent()
+    {
+        DefensiveDisabledEvent.Invoke();
     }
 }

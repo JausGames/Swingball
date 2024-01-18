@@ -19,7 +19,7 @@ public class EnableController : StateMachineBehaviour
         controller = animator.GetComponentInParent<PlayerController>();
         if (!atStart) return;
         if (disableCombat) combat.enabled = true;
-        if (disableController) controller.enabled = true;
+        if (disableController) controller.SetEnabled(true);
     }
 
     // OnStateUpdate is called on each Update frame between OnStateEnter and OnStateExit callbacks
@@ -33,7 +33,7 @@ public class EnableController : StateMachineBehaviour
     {
         if (!atEnd) return;
         if (disableCombat) combat.enabled = true;
-        if (disableController) controller.enabled = true;
+        if (disableController) controller.SetEnabled(true);
     }
 
     // OnStateMove is called right after Animator.OnAnimatorMove()

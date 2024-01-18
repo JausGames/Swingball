@@ -17,6 +17,8 @@ public class PlayerController : NetworkBehaviour
     private float maxSlopeAngle = 45f;
     private bool isSprinting;
 
+    private bool isActive = true;
+
 
 
     [Header("Jumping")]
@@ -24,6 +26,10 @@ public class PlayerController : NetworkBehaviour
     [SerializeField] private bool startJumping;
     public bool IsJumping { get => isJumping; set => isJumping = value;  }
 
+    internal void SetEnabled(bool v)
+    {
+        isActive = v;
+    }
 
     [Header("Falling")]
     [SerializeField] bool grounded = false;
@@ -72,11 +78,17 @@ public class PlayerController : NetworkBehaviour
         if (IsOwner)
         {
             Grounded = Physics.CheckSphere(floorCheck.position, .1f, walkable);
-
-            machineState.CheckTransitionState();
-            machineState.UpdatePosition();
-            //machineState.UpdateRotation();
-            machineState.ControlSpeed();
+            if (isActive)
+            {
+                machineState.CheckTransitionState();
+                machineState.UpdatePosition();
+                //machineState.UpdateRotation();
+            }
+            else
+            {
+                if(Grounded)
+                    Body.velocity -= VectorOperation.GetFlatVector(Body.velocity) * Settings.INACTIVE_STOP_FORCE;
+            }
             
         }
     }

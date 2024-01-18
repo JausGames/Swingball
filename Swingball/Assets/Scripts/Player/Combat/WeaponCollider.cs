@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.VFX;
 
 // Make sure the order is later than your LateUpdate script, say IK system, you can check the order at Edit->ProejectSettings->ScriptExecutionOrder
@@ -12,7 +13,8 @@ public class WeaponCollider : MonoBehaviour
         Normal,
         Offensive,
         Defensive,
-        Lob
+        Lob,
+        Fire,
     }
 
     [SerializeField] LayerMask layermask;
@@ -23,6 +25,10 @@ public class WeaponCollider : MonoBehaviour
     [SerializeField] private bool isActive = false;
     [SerializeField] private List<Ball> touched = new List<Ball>();
     private State state;
+    public UnityEvent OffensiveEnabledEvent = new UnityEvent();
+    public UnityEvent OffensiveDisabledEvent = new UnityEvent();
+    public UnityEvent DefensiveEnabledEvent = new UnityEvent();
+    public UnityEvent DefensiveDisabledEvent = new UnityEvent();
 
     public Player Owner { get => owner; set => owner = value; }
 
@@ -33,7 +39,7 @@ public class WeaponCollider : MonoBehaviour
     }
     public void StartEffect(int id)
     {
-        if(effects.Count > id)
+        if (effects.Count > id)
             effects[id].Play();
     }
 
@@ -152,5 +158,25 @@ public class WeaponCollider : MonoBehaviour
             foreach (var particle in particles) particle.Play();
         }
         if (v) touched.Clear();
+
+        switch (state)
+        {
+            case State.Offensive:
+                if (v)
+                    OffensiveEnabledEvent.Invoke();
+                else
+                    OffensiveDisabledEvent.Invoke();
+                break;
+            case State.Defensive:
+                if (v)
+                    OffensiveEnabledEvent.Invoke();
+                else
+                    DefensiveDisabledEvent.Invoke();
+                break;
+            case State.Normal:
+            case State.Lob:
+            default:
+                break;
+        }
     }
 }

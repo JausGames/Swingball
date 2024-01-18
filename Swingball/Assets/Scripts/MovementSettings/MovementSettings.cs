@@ -11,6 +11,7 @@ public class MovementSettings : ScriptableObject
     [SerializeField] public float SPEED = 80f;
     [SerializeField] public float MAX_SPEED = 15f;
     [SerializeField] public float STOP_FORCE = 5f;
+    [SerializeField] public float INACTIVE_STOP_FORCE = .4f;
 
 
     [Header("Rotation")]
