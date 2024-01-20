@@ -26,6 +26,7 @@ public class Player : NetworkBehaviour
     public NetworkVariable<float> health = new NetworkVariable<float>(100f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<float> special = new NetworkVariable<float>(100f, NetworkVariableReadPermission.Owner, NetworkVariableWritePermission.Server);
     public NetworkVariable<bool> isDead = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    private bool isFalling;
     private bool isDying;
     private UnityEvent dieEvent = new UnityEvent();
     private UnityEvent resurectEvent = new UnityEvent();
@@ -39,7 +40,9 @@ public class Player : NetworkBehaviour
     internal bool isHurt;
     private bool deadFromFalling;
     private bool slowMotion;
+    private bool invincible = false;
 
+    public bool IsFalling { get => isFalling; set => isFalling = value; }
     public bool IsDying { get => isDying; set => isDying = value; }
     public bool IsDead { get => isDead.Value; set => isDead.Value = value; }
     public UnityEvent DieEvent { get => dieEvent; set => dieEvent = value; }
@@ -55,7 +58,8 @@ public class Player : NetworkBehaviour
     /// <param name="value">Amount to remove from special points</param>
     internal void RemoveSpecialPoints(float value)
     {
-        special.Value = Mathf.Max(0, special.Value - value);
+        if(!isTraining)
+            special.Value = Mathf.Max(0, special.Value - value);
     }
 
     [SerializeField] private AudioSource audioSource;
@@ -63,6 +67,8 @@ public class Player : NetworkBehaviour
 
     [SerializeField] private AudioLowPassFilter lowPass;
     private Ball ball;
+    private bool isTraining = false;
+    private bool gettingUp;
 
     public Vector3 hitDirection
     {
@@ -86,6 +92,10 @@ public class Player : NetworkBehaviour
     public AudioLowPassFilter LowPass { get => lowPass; set => lowPass = value; }
     public bool InHurtAnim { get; internal set; }
     public Ball Ball { get => ball; set => ball = value; }
+    public bool Invincible { get => invincible; set => invincible = value; }
+    public PlayerCombat Combat { get => combat; set => combat = value; }
+    public bool GettingUp { get => gettingUp; set => gettingUp = value; }
+    public bool IsTraining { get => isTraining; set => isTraining = value; }
 
     private void Update()
     {
@@ -114,6 +124,21 @@ public class Player : NetworkBehaviour
             camera.LookAt = lookAtTransform;
             camera.Follow = transform;
         }
+    }
+
+    internal void SetFall(float trapTime)
+    {
+        isFalling = true;
+
+        StartCoroutine(WaitToGetUp(trapTime));
+    }
+
+    private IEnumerator WaitToGetUp(float trapTime)
+    {
+        yield return new WaitForSeconds(trapTime);
+
+
+        gettingUp = true;
     }
 
     internal Vector3 GetLobDirection()
@@ -154,6 +179,11 @@ public class Player : NetworkBehaviour
         }
     }
 
+    internal void PlayerTouched(Player player, WeaponCollider.BallState state)
+    {
+        combat.PlayerTouched(player, state);
+    }
+
     public void SetHealthBar(HealthBar healthBar)
     {
         healthbar = healthBar;
@@ -185,8 +215,8 @@ public class Player : NetworkBehaviour
     public void SetMoveActionBar(HealthBar healthBar)
     {
         moveActionBar = healthBar;
-        healthbar.SetMaxHealth(1f);
-        healthbar.SetHealth(1f);
+        moveActionBar.SetMaxHealth(1f);
+        moveActionBar.SetHealth(1f);
 
     }
 
@@ -232,21 +262,22 @@ public class Player : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     void SubmitGetHitRequestServerRpc(float damage, ServerRpcParams rpcParams = default)
     {
-        //GetHit(damage);
-        health.Value = Mathf.Max(health.Value - damage, 0f);
+        Debug.Log("SubmitGetHitRequestServerRpc");
+
+        if (!isTraining)
+            health.Value = Mathf.Max(health.Value - damage, 0f);
         if (health.Value == 0)
-        {
             Die();
-        }
+        
         else
-        {
             ClientPlayHitClientRpc();
-        }
+        
         ClientPlayBloodParticleClientRpc();
     }
     [ServerRpc(RequireOwnership = false)]
     internal void SubmitAddSpecialRequestServerRpc(float point, ServerRpcParams rpcParams = default)
     {
+        if (isTraining) return;
         special.Value = Mathf.Min(100f, special.Value + point);
     }
 

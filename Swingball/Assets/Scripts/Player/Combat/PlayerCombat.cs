@@ -2,6 +2,7 @@ using UnityEngine;
 using Unity.Netcode;
 using System.Collections;
 using System;
+using System.Collections.Generic;
 
 public class LobSettings
 {
@@ -14,6 +15,7 @@ public abstract class PlayerCombat : NetworkBehaviour
     [SerializeField] protected Rigidbody body;
     protected OnlinePlayerInputs inputs;
     [SerializeField] protected AudioSource source;
+    [SerializeField] protected List<WeaponCollider> weaponColliders = new List<WeaponCollider>();
 
     [SerializeField] protected NetworkVariable<bool> specialDefensive = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     [SerializeField] protected NetworkVariable<bool> specialOffensive = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -32,6 +34,7 @@ public abstract class PlayerCombat : NetworkBehaviour
     public float NextMoveAction { get => nextMoveAction; }
     public float MoveActionCooldown { get => moveActionCooldown; }
     public Player Player { get => player; set => player = value; }
+    public List<WeaponCollider> WeaponColliders { get => weaponColliders; internal set => weaponColliders = value; }
 
     [Header("Values")]
     [SerializeField] protected float defensiveMoveValue = 40f;
@@ -150,6 +153,11 @@ public abstract class PlayerCombat : NetworkBehaviour
                 SetMoving(false);
         }
     }
+
+    public virtual void PlayerTouched(Player player, WeaponCollider.BallState state)
+    {
+    }
+
 
     protected virtual bool CheckIfCanMoveAction()
     {

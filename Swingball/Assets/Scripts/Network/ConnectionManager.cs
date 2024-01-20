@@ -18,6 +18,7 @@ public class ConnectionManager : MonoBehaviour
 
     [SerializeField] GameObject canvas;
     [SerializeField] MatchManager matchManager;
+    [SerializeField] PlayerManager playerManager;
 
     [SerializeField] private GameObject playerPrefab;
     [SerializeField] private UNetTransport transport;
@@ -27,7 +28,6 @@ public class ConnectionManager : MonoBehaviour
 
     Ping ping;
     List<int> pingsArray = new List<int>();
-    int pingCount = 50;
 
     [SerializeField] private bool localTest = false;
 
@@ -282,14 +282,14 @@ public class ConnectionManager : MonoBehaviour
         response.Pending = false;
         if (response.Approved)
         {
-            var pos = matchManager.Players[0] == null ? matchManager.Spawns[0] : matchManager.Spawns[1];
+            var pos = playerManager.Players.Count == 0 ? playerManager.Spawns[0] : playerManager.Spawns[1];
 
 
             GameObject go = Instantiate(playerPrefab, pos.position, Quaternion.identity);
             var networkObject = go.GetComponent<NetworkObject>();
             networkObject.SpawnWithOwnership(clientId, false);
 
-            matchManager.AddPlayer(go.GetComponent<Player>());
+            playerManager.AddPlayer(go.GetComponent<Player>());
 
             dict.Add(clientId, networkObject);
 

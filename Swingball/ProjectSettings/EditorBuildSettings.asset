@@ -17,4 +17,7 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/CityScene.unity
     guid: 324c1b5b366bbed499f308cfe39833d6
+  - enabled: 1
+    path: Assets/Scenes/TrainingScene.unity
+    guid: 58c89a02a2581e2428c23dc9d9b1ec7f
   m_configObjects: {}

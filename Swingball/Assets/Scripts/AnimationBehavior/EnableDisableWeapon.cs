@@ -13,14 +13,16 @@ public class EnableDisableWeapon : StateMachineBehaviour
     [SerializeField] private float waitEnableTime;
     [SerializeField] private float waitDisableTime;
     [SerializeField] private int slashEffectNb = 0;
+    [SerializeField] private int weaponColliderNb = 0;
     [SerializeField] private List<AudioClip> clips;
     [SerializeField] private AudioSource source;
-    [SerializeField] private WeaponCollider.State state = WeaponCollider.State.Normal;
+    [SerializeField] private WeaponCollider.BallState state = WeaponCollider.BallState.Normal;
 
     // OnStateEnter is called when a transition starts and the state machine starts to evaluate this state
     override public void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
-        weapon = animator.GetComponentInChildren<WeaponCollider>();
+        //weapon = animator.GetComponentInChildren<WeaponCollider>();
+        weapon = animator.GetComponentInParent<PlayerCombat>().WeaponColliders[weaponColliderNb];
         source = animator.GetComponent<PlayerAnimationEvent>().Source;
         startTime = Time.time;
         enabled = false;

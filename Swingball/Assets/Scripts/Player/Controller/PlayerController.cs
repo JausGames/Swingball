@@ -88,6 +88,8 @@ public class PlayerController : NetworkBehaviour
             {
                 if(Grounded)
                     Body.velocity -= VectorOperation.GetFlatVector(Body.velocity) * Settings.INACTIVE_STOP_FORCE;
+                else
+                    Body.AddForce(Vector3.down * 50f, ForceMode.Acceleration);
             }
             
         }

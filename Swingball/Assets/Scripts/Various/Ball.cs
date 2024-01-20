@@ -15,23 +15,27 @@ public class Ball : NetworkBehaviour
         Idle,
     }
 
-    MatchManager match;
+    [Header("State")]
     private bool desync;
-    [SerializeField] private Vector3 direction;
-    [SerializeField] protected Vector3 speed;
-    [SerializeField] private State state = State.Normal;
+    protected Vector3 direction;
+    protected Vector3 speed;
+    protected State state = State.Normal;
     [SerializeField] private LayerMask playerMask;
+    [SerializeField] private float speedMultiplier = 1f;
 
     [Header("Network")]
-    [SerializeField] private ulong owner;
-    [SerializeField] private Player ownerObj;
-    [SerializeField] private Player target;
-    [SerializeField] private List<Player> victims;
+    protected ulong owner = 1;
+    [SerializeField] protected Player ownerObj;
+    protected Player target;
+    protected List<Player> victims = new List<Player>();
+
     [Header("Colors")]
     [SerializeField] Color noOwnerColor;
     [SerializeField] Color selfColor;
-    [SerializeField] Color oppsColor;
+    [SerializeField] protected Color oppsColor;
+
     [Header("Component")]
+    protected MatchManager match;
     [SerializeField] protected List<ParticleSystem> particlesInst;
     [SerializeField] protected List<ParticleSystem> particles;
     [SerializeField] TrailRenderer trail;
@@ -40,6 +44,7 @@ public class Ball : NetworkBehaviour
     [SerializeField] protected Collider selfCollider;
     [SerializeField] protected Collider floorCollider;
     [SerializeField] private GameObject fakeBallPrefab;
+
     [Header("Stats")]
     [SerializeField] private float damageMult = 5f;
     [SerializeField] private float originSpeed = 10f;
@@ -48,7 +53,6 @@ public class Ball : NetworkBehaviour
     [SerializeField] private float maxSpeed = 50f;
     [SerializeField] private float redirectFactor = 1f;
     [SerializeField] private float posOffset = 1f;
-
 
     [Header("SFX")]
     [SerializeField] private AudioSource audioSource;
@@ -59,14 +63,18 @@ public class Ball : NetworkBehaviour
     [SerializeField] private AudioClip lobClip;
     [SerializeField] private AudioClip smashClip;
 
+    [Header("SVFX - Fire")]
+    [SerializeField] private float maxParticleByDistance;
+    [SerializeField] private AudioSource fireSource;
+    [SerializeField] private List<ParticleSystem> fireParticles;
+
     private UnityEvent onIdleOverEvent = new UnityEvent();
     private Rigidbody body;
-    /*    private float lobSpeed = 8f;*/
     private float minPitch = .8f;
     private float maxPitch = 2f;
     private float idleTime;
-    private long startIdleTime;
-    private long endIdle;
+    protected long startIdleTime;
+    protected long endIdle;
     private AudioClip nextClip;
     private bool endIdleVfx;
     [SerializeField] private State endIdleState;
@@ -87,37 +95,13 @@ public class Ball : NetworkBehaviour
     // Update is called once per frame
     void LateUpdate()
     {
-
+        var baseSpeed = speed;
         switch (state)
         {
             case State.Normal:
-                if (match && target && ownerObj)
+                if (match && target)
                 {
-
-                    if (match.Players.Length == 2)
-                    {
-
-                        var dist = (ownerObj.transform.position - target.transform.position).sqrMagnitude;
-
-                        Vector3 toTargetFlat = VectorOperation.GetFlatVector(target.transform.position - transform.position + posOffset * Vector3.up);
-                        Vector3 toTargetVertical = new Vector3(0, target.transform.position.y + posOffset, 0) - new Vector3(0, transform.position.y, 0);
-
-
-                        var horSpeed = Vector3.MoveTowards(speed,
-                           (target.transform.position - transform.position + posOffset * Vector3.up).normalized * currSpeed,
-                            Time.deltaTime * (currSpeed + originSpeed) * redirectFactor);
-
-                        var vertSpeed = Vector3.MoveTowards(Vector3.up * body.velocity.y,
-                           toTargetVertical.y < 0f ? toTargetVertical.normalized * Physics.gravity.magnitude : Vector3.zero,
-                            Time.deltaTime * (currSpeed + originSpeed) * redirectFactor);
-
-                        //speed = horSpeed + vertSpeed;
-                        speed = horSpeed;
-                        body.velocity = speed;
-
-                        //physics
-                        //body.AddForce((toTargetFlat + toTargetVertical).normalized * currSpeed * Time.deltaTime, ForceMode.Acceleration);
-                    }
+                    MoveBallTowardTarget();
                 }
                 break;
             case State.NoOwner:
@@ -128,7 +112,7 @@ public class Ball : NetworkBehaviour
                 if (IsServer && transform.position.y < -20f)
                 {
                     int ownerNb = -1;
-                    for (int i = 0; i < match.Players.Length; i++)
+                    for (int i = 0; i < match.Players.Count; i++)
                     {
                         if (match.Players[i].OwnerClientId == owner)
                             ownerNb = i;
@@ -204,15 +188,40 @@ public class Ball : NetworkBehaviour
 
         }
         if (IsServer)
+        {
             SynchronizeBallClientRpc(transform.position, speed);
+            UpdateVfxClientRpc(speedMultiplier);
+        }
 
         loopAudioSource.pitch = minPitch + (maxPitch - minPitch) * (currSpeed / maxSpeed);
+
 
 
         if (state == State.NoOwner) return;
 
         var cols = Physics.OverlapSphere(transform.position, .3f, playerMask);
         CheckColision(cols);
+    }
+
+    [ClientRpc]
+    private void UpdateVfxClientRpc(float speedMultiplier)
+    {
+        fireParticles.ForEach(p =>
+        {
+            var em = p.emission;
+            em.rateOverDistanceMultiplier = (speedMultiplier - 1f) * maxParticleByDistance;
+            fireSource.volume = (speedMultiplier - 1f) / 3f * .5f;
+        });
+    }
+
+    private void MoveBallTowardTarget()
+    {
+        var horSpeed = Vector3.MoveTowards(speed,
+           (target.transform.position - transform.position + posOffset * Vector3.up).normalized * currSpeed,
+            Time.deltaTime * (currSpeed + originSpeed) * redirectFactor);
+
+        speed = horSpeed;
+        body.velocity = speed;
     }
 
     protected virtual bool CheckColision(Collider[] cols)
@@ -222,7 +231,7 @@ public class Ball : NetworkBehaviour
         {
             var pl = col.GetComponent<Player>();
 
-            if (pl && pl.IsOwner && !victims.Contains(pl) && pl != ownerObj)
+            if (pl && pl.IsOwner && !pl.Invincible && !victims.Contains(pl) && pl != ownerObj)
             {
                 pl.GetHit(currSpeed * damageMult);
                 victims.Add(pl);
@@ -292,7 +301,7 @@ public class Ball : NetworkBehaviour
             increment--;
             this.increment = increment;
             if (speed == 0)
-                FindNewSpeed();
+                FindNewSpeed(1f);
             else
                 currSpeed = speed;
         }
@@ -302,7 +311,7 @@ public class Ball : NetworkBehaviour
         //ChangeOwnerClientRpc(target);
     }
 
-    internal void ChangeOwner(int nb)
+    protected virtual void ChangeOwner(int nb)
     {
         victims.Clear();
         if (state == State.NoOwner)
@@ -333,7 +342,7 @@ public class Ball : NetworkBehaviour
         ChangeColors(noOwnerColor);
 
     }
-    private void ChangeColors(Color color)
+    protected void ChangeColors(Color color)
     {
         /*foreach (var prtc in particles)
         {
@@ -365,17 +374,15 @@ public class Ball : NetworkBehaviour
 
         return true;
     }
-    public virtual bool TryHitBall(Player owner, Vector3 hitDirection)
+    public virtual bool TryHitBall(Player owner, Vector3 hitDirection, float speedModifier = 1f)
     {
         //if (this.ownerObj == owner) return false;
-        this.owner = owner.OwnerClientId;
-        this.ownerObj = owner;
-        target = owner == match.Players[0] ? match.Players[1] : match.Players[0];
-
+        FindNewTargetLocally(owner);
+        
         desync = true;
         SetIdleForOwner();
 
-        SetBallHitServerRpc(this.owner, owner.NetworkObjectId, Time.time, transform.position, hitDirection);
+        SetBallHitServerRpc(this.owner, owner.NetworkObjectId, Time.time, transform.position, hitDirection, -1f, speedModifier);
         audioSource.PlayOneShot(hitclip);
 
         return true;
@@ -393,20 +400,25 @@ public class Ball : NetworkBehaviour
 
         return true;
     }
-    public virtual bool TrySmashBall(Player owner, Vector3 hitDirection)
+    public virtual bool TrySmashBall(Player owner, Vector3 hitDirection, float speedModifier = 1f)
     {
         //if (this.ownerObj == owner) return false;
-        this.owner = owner.OwnerClientId;
-        this.ownerObj = owner;
-        target = owner == match.Players[0] ? match.Players[1] : match.Players[0];
+        FindNewTargetLocally(owner);
 
         desync = true;
         SetIdleForOwner();
 
-        SetBallSmashServerRpc(this.owner, owner.NetworkObjectId, Time.time, transform.position, hitDirection);
+        SetBallSmashServerRpc(this.owner, owner.NetworkObjectId, Time.time, transform.position, hitDirection, speedModifier);
         audioSource.PlayOneShot(smashClip);
 
         return true;
+    }
+
+    protected virtual void FindNewTargetLocally(Player owner)
+    {
+        this.owner = owner.OwnerClientId;
+        this.ownerObj = owner;
+        target = owner == match.Players[0] ? match.Players[1] : match.Players[0];
     }
 
     private void SetIdleForOwner()
@@ -419,12 +431,12 @@ public class Ball : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void SetBallHitServerRpc(ulong owner, ulong ownerPlayerObject, float timestamp, Vector3 oldPos, Vector3 direction, float idleTime = -1f)
+    protected virtual void SetBallHitServerRpc(ulong owner, ulong ownerPlayerObject, float timestamp, Vector3 oldPos, Vector3 direction, float idleTime = -1f, float speedMultiplier = 1f)
     {
         var nb = owner == match.Players[0].OwnerClientId ? 0 : 1;
         ChangeOwner(nb);
 
-        FindNewSpeed();
+        FindNewSpeed(speedMultiplier);
 
         var dist = (match.Players[0].transform.position - match.Players[1].transform.position).sqrMagnitude;
 
@@ -454,8 +466,6 @@ public class Ball : NetworkBehaviour
 
         currSpeed = lobSpeed;
 
-        var dist = (match.Players[0].transform.position - match.Players[1].transform.position).sqrMagnitude;
-
         this.direction = direction;
         speed = currSpeed * direction;
 
@@ -465,14 +475,12 @@ public class Ball : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void SetBallSmashServerRpc(ulong owner, ulong ownerPlayerObject, float timestamp, Vector3 oldPos, Vector3 direction)
+    private void SetBallSmashServerRpc(ulong owner, ulong ownerPlayerObject, float timestamp, Vector3 oldPos, Vector3 direction, float speedMultiplier = 1f)
     {
         var nb = owner == match.Players[0].OwnerClientId ? 0 : 1;
         ChangeOwner(nb);
 
-        FindNewSmashSpeed();
-
-        var dist = (match.Players[0].transform.position - match.Players[1].transform.position).sqrMagnitude;
+        FindNewSmashSpeed(speedMultiplier);
 
         transform.position = oldPos;
 
@@ -488,8 +496,17 @@ public class Ball : NetworkBehaviour
         //transform.position = GetPredictedPosition(timestamp, oldPos, speed);
     }
 
+    protected virtual float GetDist()
+    {
+        return (match.Players[0].transform.position - match.Players[1].transform.position).sqrMagnitude;
+    }
+    public virtual Vector3 GetDir()
+    {
+        return (match.Players[0].transform.position - match.Players[1].transform.position).normalized;
+    }
+
     [ClientRpc]
-    private void SetIdleTimeClientRpc(long endIdle, float idleTime, long startIdleTime, State endIdleState = State.Normal)
+    protected void SetIdleTimeClientRpc(long endIdle, float idleTime, long startIdleTime, State endIdleState = State.Normal)
     {
         body.velocity = Vector3.zero;
         this.endIdleState = endIdleState;
@@ -506,7 +523,7 @@ public class Ball : NetworkBehaviour
         slowMoAudioSource.Play();
     }
 
-    private void SetIdleTime(bool endIdleVfx = true)
+    protected void SetIdleTime(bool endIdleVfx = true)
     {
         this.endIdleVfx = endIdleVfx;
         body.velocity = Vector3.zero;
@@ -556,16 +573,20 @@ public class Ball : NetworkBehaviour
         //Debug.Log($"Ball, SetIdleTime : end {DateTime.UtcNow.AddSeconds(time).Second}:{DateTime.UtcNow.AddSeconds(time).Millisecond}s");
     }
 
-    private void FindNewSpeed()
+    protected void FindNewSpeed(float speedMultiplier)
     {
         increment++;
+        this.speedMultiplier = speedMultiplier;
         currSpeed = Mathf.Min(1f, (Mathf.Log(increment + 1f) / 3.5f)) * (maxSpeed - originSpeed) + originSpeed;
+        currSpeed *= speedMultiplier;
         //Debug.Log("Ball, FindNewSpeed : currSpeed = " + currSpeed + ", increment = " + increment);
     }
-    private void FindNewSmashSpeed()
+    private void FindNewSmashSpeed(float speedMultiplier)
     {
         increment++;
+        this.speedMultiplier = speedMultiplier;
         currSpeed = Mathf.Min(1f, (Mathf.Log(increment + 1f) / 3.5f)) * (maxSpeed * 1.5f - originSpeed) + originSpeed;
+        currSpeed *= speedMultiplier;
         //Debug.Log("Ball, FindNewSmashSpeed : currSpeed = " + currSpeed + ", increment = " + increment);
     }
 
@@ -580,7 +601,7 @@ public class Ball : NetworkBehaviour
         ChangeOwner(nb);
     }
     [ClientRpc]
-    private void SetBallHitClientRpc(ulong owner, float currSpeed, Vector3 direction, Vector3 speed)
+    protected void SetBallHitClientRpc(ulong owner, float currSpeed, Vector3 direction, Vector3 speed)
     {
         var nb = owner == match.Players[0].OwnerClientId ? 0 : 1;
 
@@ -597,8 +618,13 @@ public class Ball : NetworkBehaviour
         foreach (var prtc in particlesInst)
             prtc.Play();
 
-        if (!this.ownerObj.IsOwner)
+        if (!GetPlayerObject().IsOwner)
             audioSource.PlayOneShot(nextClip);
+    }
+
+    Player GetPlayerObject()
+    {
+        return match.Players[owner == match.Players[0].OwnerClientId ? 0 : 1];
     }
 
     [ClientRpc]

@@ -30,7 +30,7 @@ public class FakeBall : Ball
         }
         return res;
     }
-    public override bool TryHitBall(Player owner, Vector3 hitDirection)
+    public override bool TryHitBall(Player owner, Vector3 hitDirection, float speedModifier)
     {
         if (this.OwnerObj == owner) return false;
         AskForDespawnServerRpc();
@@ -44,7 +44,7 @@ public class FakeBall : Ball
         renderer.enabled = false;
         return false;
     }
-    public override bool TrySmashBall(Player owner, Vector3 hitDirection)
+    public override bool TrySmashBall(Player owner, Vector3 hitDirection, float speedModifier)
     {
         if (this.OwnerObj == owner) return false;
         AskForDespawnServerRpc();

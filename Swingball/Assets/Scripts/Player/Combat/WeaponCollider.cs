@@ -8,13 +8,12 @@ using UnityEngine.VFX;
 //[DefaultExecutionOrder(11000)]
 public class WeaponCollider : MonoBehaviour
 {
-    internal enum State
+    public enum BallState
     {
         Normal,
         Offensive,
         Defensive,
         Lob,
-        Fire,
     }
 
     [SerializeField] LayerMask layermask;
@@ -24,7 +23,8 @@ public class WeaponCollider : MonoBehaviour
     [SerializeField] Player owner;
     [SerializeField] private bool isActive = false;
     [SerializeField] private List<Ball> touched = new List<Ball>();
-    private State state;
+    [SerializeField] private List<Player> playerTouched = new List<Player>();
+    private BallState state;
     public UnityEvent OffensiveEnabledEvent = new UnityEvent();
     public UnityEvent OffensiveDisabledEvent = new UnityEvent();
     public UnityEvent DefensiveEnabledEvent = new UnityEvent();
@@ -82,13 +82,14 @@ public class WeaponCollider : MonoBehaviour
          }*/
 
         var ball = other.GetComponentInParent<Ball>();
+        var player = other.GetComponent<Player>() ;
 
         if (ball && !touched.Contains(ball) && ball.State1 != Ball.State.Idle)
         {
             touched.Add(ball);
             switch (state)
             {
-                case State.Normal:
+                case BallState.Normal:
                     if (owner.Controller.Grounded || owner.Controller.WallLeft || owner.Controller.WallRight)
                     {
                         if (ball.TryHitBall(owner, owner.hitDirection))
@@ -117,21 +118,21 @@ public class WeaponCollider : MonoBehaviour
                     }
 
                     break;
-                case State.Offensive:
+                case BallState.Offensive:
                     if ((owner.Controller.Grounded || owner.Controller.WallLeft || owner.Controller.WallRight)
                         && ball.TrySpecialBall(owner, owner.hitDirection))
                     {
                         owner.SpecialOffensiveMove(ball);
                     }
                     break;
-                case State.Defensive:
+                case BallState.Defensive:
                     if ((owner.Controller.Grounded || owner.Controller.WallLeft || owner.Controller.WallRight)
                         && ball.TrySpecialBall(owner, owner.hitDirection))
                     {
                         owner.SpecialDefensiveMove(ball);
                     }
                     break;
-                case State.Lob:
+                case BallState.Lob:
                     var dir = owner.GetLobDirection();
                     var speed = owner.GetLobSpeed();
                     ball.TryLobBall(owner, owner.GetLobDirection(), owner.GetLobSpeed());
@@ -140,6 +141,12 @@ public class WeaponCollider : MonoBehaviour
                     break;
             }
         }
+
+        if(player && player != owner && !playerTouched.Contains(player))
+        {
+            owner.PlayerTouched(player, state);
+            playerTouched.Add(player);
+        }
     }
 
     internal void AddTouchedBall(Ball b)
@@ -147,7 +154,7 @@ public class WeaponCollider : MonoBehaviour
         touched.Add(b);
     }
 
-    internal void IsActive(bool v, State state = State.Normal, int slashEffectNb = -1)
+    internal void IsActive(bool v, BallState state = BallState.Normal, int slashEffectNb = -1)
     {
         isActive = v;
         this.state = state;
@@ -158,23 +165,24 @@ public class WeaponCollider : MonoBehaviour
             foreach (var particle in particles) particle.Play();
         }
         if (v) touched.Clear();
+        if (v) playerTouched.Clear();
 
         switch (state)
         {
-            case State.Offensive:
+            case BallState.Offensive:
                 if (v)
                     OffensiveEnabledEvent.Invoke();
                 else
                     OffensiveDisabledEvent.Invoke();
                 break;
-            case State.Defensive:
+            case BallState.Defensive:
                 if (v)
-                    OffensiveEnabledEvent.Invoke();
+                    DefensiveEnabledEvent.Invoke();
                 else
                     DefensiveDisabledEvent.Invoke();
                 break;
-            case State.Normal:
-            case State.Lob:
+            case BallState.Normal:
+            case BallState.Lob:
             default:
                 break;
         }

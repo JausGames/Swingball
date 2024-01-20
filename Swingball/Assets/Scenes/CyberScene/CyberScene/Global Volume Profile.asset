@@ -178,7 +178,7 @@ MonoBehaviour:
     m_Value: 0.685
   tint:
     m_OverrideState: 1
-    m_Value: {r: 1, g: 0.48900002, b: 0.94294053, a: 1}
+    m_Value: {r: 1, g: 1, b: 1, a: 1}
   dirtTexture:
     m_OverrideState: 0
     m_Value: {fileID: 0}

@@ -61,6 +61,16 @@ public class PlayerAnimatorController : MonoBehaviour
             animator.SetTrigger("Dying");
             player.IsDying = false;
         }
+        if (player.IsFalling)
+        {
+            animator.SetTrigger("Fall");
+            player.IsFalling = false;
+        }
+        if (player.GettingUp)
+        {
+            animator.SetTrigger("GetUp");
+            player.GettingUp = false;
+        }
         if (player.IsResurecting)
         {
             animator.SetTrigger("Resurecting");
