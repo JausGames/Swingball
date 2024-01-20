@@ -28,10 +28,7 @@ public class PlayerManager : NetworkBehaviour
     {
         if (players.Count >= MaxPlayer) return;
 
-        if(matchManager.IsTraining)
-        {
-            player.IsTraining = true;
-        }
+        
 
         players.Add(player);
 

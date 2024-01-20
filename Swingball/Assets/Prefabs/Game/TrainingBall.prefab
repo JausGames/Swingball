@@ -9899,7 +9899,8 @@ MonoBehaviour:
   spriteFloorTarget: {fileID: 2333389470804953567}
   selfCollider: {fileID: 0}
   floorCollider: {fileID: 0}
-  fakeBallPrefab: {fileID: 0}
+  fakeBallPrefab: {fileID: 7547369957200171166, guid: 41856c60d239f7d48abb48a518f2af9c,
+    type: 3}
   damageMult: 0
   originSpeed: 5
   currSpeed: 5

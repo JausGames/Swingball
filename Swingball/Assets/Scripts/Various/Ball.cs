@@ -31,7 +31,7 @@ public class Ball : NetworkBehaviour
 
     [Header("Colors")]
     [SerializeField] Color noOwnerColor;
-    [SerializeField] Color selfColor;
+    [SerializeField] protected Color selfColor;
     [SerializeField] protected Color oppsColor;
 
     [Header("Component")]
@@ -694,7 +694,7 @@ public class Ball : NetworkBehaviour
             var ballobj = Instantiate(fakeBallPrefab, transform.position, transform.rotation, null);
             ballobj.GetComponent<NetworkObject>().Spawn();
             var fakeBall = ballobj.GetComponent<FakeBall>();
-
+            fakeBall.match = match;
             var playerNb = owner == Match.Players[0].OwnerClientId ? 0 : 1;
 
             fakeBall.SetUpBall(Match, playerNb, increment);

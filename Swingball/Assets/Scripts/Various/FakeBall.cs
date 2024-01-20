@@ -59,6 +59,37 @@ public class FakeBall : Ball
         return false;
     }
 
+    protected override void ChangeOwner(int nb)
+    {
+        if (match.Players.Count == 1)
+        {
+
+        victims.Clear();
+        if (state == State.NoOwner)
+            IgnoreFloor(true);
+
+        target = match.Players[0];
+        owner = match.Players[0].OwnerClientId;
+        //ownerObj = match.Players[0];
+
+        ChangeColors(oppsColor);
+        }
+        else
+        {
+            victims.Clear();
+            if (state == State.NoOwner)
+                IgnoreFloor(true);
+
+            target = match.Players[nb == 0 ? 1 : 0];
+            owner = match.Players[nb].OwnerClientId;
+            ownerObj = match.Players[nb];
+
+            if (IsServer && !IsHost) return;
+
+            ChangeColors(ownerObj.IsOwner ? selfColor : oppsColor);
+        }
+
+    }
     [ServerRpc(RequireOwnership = false)]
     public void AskForDespawnServerRpc()
     {
@@ -73,7 +104,8 @@ public class FakeBall : Ball
     IEnumerator WaitToKill()
     {
         yield return new WaitForSeconds(.2f);
-        GetNetworkObject(NetworkObjectId).Despawn();
+        if(GetNetworkObject(NetworkObjectId) != null)
+            GetNetworkObject(NetworkObjectId).Despawn();
     }
 
     public override void OnNetworkDespawn()

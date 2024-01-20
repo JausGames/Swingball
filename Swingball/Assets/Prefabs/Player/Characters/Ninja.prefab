@@ -5064,6 +5064,19 @@ MonoBehaviour:
   owner: {fileID: 0}
   isActive: 0
   touched: []
+  playerTouched: []
+  OffensiveEnabledEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  OffensiveDisabledEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  DefensiveEnabledEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  DefensiveDisabledEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &2184711528692785155
 GameObject:
   m_ObjectHideFlags: 0
@@ -5434,6 +5447,8 @@ MonoBehaviour:
   player: {fileID: 4480161028868504586}
   body: {fileID: 5261780858871781471}
   source: {fileID: 320368068069157094}
+  weaponColliders:
+  - {fileID: 7484757471436504531}
   specialDefensive:
     m_InternalValue: 0
   specialOffensive:
@@ -11895,6 +11910,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0102c72a5fc950f4c9b6e886878b161e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  OffensiveEnabledEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  DefensiveEnabledEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  OffensiveDisabledEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  DefensiveDisabledEvent:
+    m_PersistentCalls:
+      m_Calls: []
   source: {fileID: 320368068069157094}
   swingNormal: {fileID: 8300000, guid: 686d137af9ecc60408872b38a4f3709f, type: 3}
   swingLob: {fileID: 8300000, guid: 799a11f44aafd3e45a2db1cee5c2c7ce, type: 3}
