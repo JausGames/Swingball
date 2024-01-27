@@ -22,17 +22,26 @@ public class KnightCombat : PlayerCombat
     [SerializeField] List<ParticleSystem> enableHolyTrapParticles;
     [SerializeField] List<ParticleSystem> showTrapZoneParticles;
 
+    [SerializeField] List<ParticleSystem> parryParticles;
+
     [SerializeField] float currentSpeedModifier = 1f;
+    private KnightAnimatorController animator;
+    private float startGuardTime = 0f;
+    private float parryTime = .1f;
+
+    public bool Blocking { get; private set; }
 
     private void Start()
     {
-        //Time.timeScale = .2f;
+        animator = GetComponentInChildren<KnightAnimatorController>();
         DefensiveMove.OnValueChanged += EnableSpecialDefenseMoveVFX;
 
         playerEvent.OffensiveEnabledEvent.AddListener(delegate { EnableHolyWeapon(true); });
         playerEvent.OffensiveDisabledEvent.AddListener(delegate { EnableHolyWeapon(false); });
         playerEvent.DefensiveEnabledEvent.AddListener(delegate { EnableHolyTrap(true); });
         playerEvent.DefensiveDisabledEvent.AddListener(delegate { EnableHolyTrap(false); });
+
+        baseWeaponCollider.ControlEnabledEvent.AddListener(delegate { startGuardTime = Time.time + parryTime; parryParticles.ForEach(p => p.Play()); });
     }
 
     private void EnableHolyTrap(bool value)
@@ -106,11 +115,11 @@ public class KnightCombat : PlayerCombat
         player.RemoveSpecialPoints(defensiveMoveValue);
     }
 
-    protected override void SetLobSettings()
+    protected override void SetControlSettings()
     {
-        LobSettings = new LobSettings()
+        LobSettings = new ControlSettings()
         {
-            Speed = 6f,
+            Speed = 7f,
             Direction = (hitDirection) => { return (VectorOperation.GetFlatVector(hitDirection).normalized).normalized; }
         };
     }
@@ -142,6 +151,18 @@ public class KnightCombat : PlayerCombat
         }
     }
 
+    internal void PerformCounter(Ball ball)
+    {
+        if (ball.TryHitBall(player, -ball.Direction, 1.2f))
+        {
+            player.SetSlowMo(true);
+            ball.OnIdleOverEvent.AddListener(delegate
+            {
+                player.SetSlowMo(false);
+                ball.OnIdleOverEvent.RemoveAllListeners();
+            });
+        }
+    }
 
     public void EnableSpecialDefenseMoveVFX(bool old, bool current)
     {
@@ -150,12 +171,28 @@ public class KnightCombat : PlayerCombat
         //holyTrapCollider.gameObject.SetActive(true);
     }
 
-    internal override void SpecialDefensiveMove(Ball ball)
+    internal override void PerformSpecialDefensive(Ball ball)
     {
-        //baseWeaponCollider.StopEffect(1);
     }
 
-    internal override void SpecialOffensiveMove(Ball ball)
+    public override void ControlBall(Ball ball)
+    {
+        if (startGuardTime > Time.time)
+        {
+            animator.Parry();
+            PerformCounter(ball);
+        }
+        else
+        {
+            animator.Block();
+            ball.TryLobBall(player, player.GetLobDirection(), player.GetLobSpeed());
+        }
+    }
+    internal override void ControlMove(Ball ball)
+    {
+    }
+
+    internal override void PerformSpecialOffensive(Ball ball)
     {
         // Calculer une direction sympa pour envoyer haut mais vers la target
         if (ball.TryHitBall(player, (VectorOperation.GetFlatVector(ball.GetDir()) + Vector3.up * 10f).normalized, 3f))

@@ -4,6 +4,7 @@ using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.UI;
 
 [System.Serializable]
 public class PlayerGameInfo
@@ -70,6 +71,13 @@ public class Player : NetworkBehaviour
     private bool isTraining = false;
     private bool gettingUp;
 
+    [HideInInspector]
+    public UnityEvent GetHitEvent = new UnityEvent();
+
+    [Header("Selector ui")]
+    [SerializeField] private Sprite image;
+    [SerializeField] public GameObject DummySelector;
+
     public Vector3 hitDirection
     {
         get
@@ -96,6 +104,7 @@ public class Player : NetworkBehaviour
     public PlayerCombat Combat { get => combat; set => combat = value; }
     public bool GettingUp { get => gettingUp; set => gettingUp = value; }
     public bool IsTraining { get => isTraining; set => isTraining = value; }
+    public Sprite Image { get => image; set => image = value; }
 
     private void Update()
     {
@@ -125,6 +134,7 @@ public class Player : NetworkBehaviour
             camera.Follow = transform;
         }
     }
+
 
     internal void SetFall(float trapTime)
     {
@@ -161,10 +171,6 @@ public class Player : NetworkBehaviour
         return combat.LobSettings.Speed;
     }
 
-    internal void SpecialOffensiveMove(Ball ball)
-    {
-        combat.SpecialOffensiveMove(ball);
-    }
 
     [ClientRpc]
     internal void ReplacePlayerClientRpc(Vector3 position, Quaternion rotation)
@@ -190,11 +196,6 @@ public class Player : NetworkBehaviour
         healthbar.SetMaxHealth(maxHealth);
         healthbar.SetHealth(maxHealth);
         health.OnValueChanged += UpdateHealthbar;
-    }
-
-    internal void SpecialDefensiveMove(Ball ball)
-    {
-        combat.SpecialDefensiveMove(ball);
     }
 
     public void UpdateHealthbar(float previousValue, float newValue)
@@ -226,6 +227,8 @@ public class Player : NetworkBehaviour
         if (health.Value > damage) IsHurt = true;
 
         SubmitGetHitRequestServerRpc(damage);
+
+        GetHitEvent.Invoke();
     }
 
     /*[ServerRpc(RequireOwnership = false)]

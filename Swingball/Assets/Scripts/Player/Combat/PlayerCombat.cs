@@ -4,7 +4,16 @@ using System.Collections;
 using System;
 using System.Collections.Generic;
 
-public class LobSettings
+enum Action
+{
+    Strike,
+    Lob,
+    Offensive,
+    Defensive,
+    Move,
+    Nothing
+}
+public class ControlSettings
 {
     public float Speed;
     public Func<Vector3, Vector3> Direction;
@@ -24,12 +33,12 @@ public abstract class PlayerCombat : NetworkBehaviour
     [SerializeField] protected NetworkVariable<bool> moving = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     public NetworkVariable<bool> Attacking { get => attacking; set => attacking = value; }
     public NetworkVariable<bool> Lobbing { get => lobbing; set => lobbing = value; }
-    [SerializeField] private LobSettings lobSettings;
+    [SerializeField] private ControlSettings lobSettings;
     public NetworkVariable<bool> DefensiveMove { get => specialDefensive; set => specialDefensive = value; }
     public NetworkVariable<bool> OffensiveMove { get => specialOffensive; set => specialOffensive = value; }
     public float DefensiveMoveValue { get => defensiveMoveValue; set => defensiveMoveValue = value; }
     public float OffensiveMoveValue { get => offensiveMoveValue; set => offensiveMoveValue = value; }
-    public LobSettings LobSettings { get => lobSettings; set => lobSettings = value; }
+    public ControlSettings LobSettings { get => lobSettings; set => lobSettings = value; }
     public NetworkVariable<bool> Moving { get => moving; set => moving = value; }
     public float NextMoveAction { get => nextMoveAction; }
     public float MoveActionCooldown { get => moveActionCooldown; }
@@ -45,12 +54,12 @@ public abstract class PlayerCombat : NetworkBehaviour
     private void Awake()
     {
         inputs = GetComponent<OnlinePlayerInputs>();
-        SetLobSettings();
+        SetControlSettings();
         inputs.StartAttackEvent.AddListener(delegate () { Attack(true); });
         inputs.StopAttackEvent.AddListener(delegate () { Attack(false); });
 
-        inputs.StartLobEvent.AddListener(delegate () { Lob(true); });
-        inputs.StopLobEvent.AddListener(delegate () { Lob(false); });
+        inputs.StartLobEvent.AddListener(delegate () { Control(true); });
+        inputs.StopLobEvent.AddListener(delegate () { Control(false); });
 
         inputs.StartOffensiveEvent.AddListener(delegate () { SpecialOffensive(true); });
         inputs.StopOffensiveEvent.AddListener(delegate () { SpecialOffensive(false); });
@@ -62,7 +71,9 @@ public abstract class PlayerCombat : NetworkBehaviour
         inputs.StopMoveEvent.AddListener(delegate () { Move(false); });
     }
 
-    protected abstract void SetLobSettings();
+
+
+    protected abstract void SetControlSettings();
     #region Attack base
     public void Attack(bool Attacking)
     {
@@ -81,6 +92,34 @@ public abstract class PlayerCombat : NetworkBehaviour
     {
         return enabled ? attacking.Value : false;
     }
+
+    internal void SmashBallDetected(Ball ball)
+    {
+        if (ball.TrySmashBall(player, player.hitDirection))
+        {
+            player.SetSlowMo(true);
+            ball.OnIdleOverEvent.AddListener(delegate
+            {
+                player.SetSlowMo(false);
+                player.SubmitAddSpecialRequestServerRpc(ball.Speed.magnitude);
+                ball.OnIdleOverEvent.RemoveAllListeners();
+            });
+        }
+    }
+    internal void HitBallDetected(Ball ball)
+    {
+        if (ball.TryHitBall(player, player.hitDirection))
+        {
+            player.SetSlowMo(true);
+            ball.OnIdleOverEvent.AddListener(delegate
+            {
+                player.SetSlowMo(false);
+                player.SubmitAddSpecialRequestServerRpc(ball.Speed.magnitude);
+                ball.OnIdleOverEvent.RemoveAllListeners();
+            });
+        }
+    }
+
     #endregion
     #region Special defensif
     public void SpecialDefensive(bool performed)
@@ -99,7 +138,15 @@ public abstract class PlayerCombat : NetworkBehaviour
     {
         return enabled ? specialDefensive.Value : false;
     }
-    internal abstract void SpecialDefensiveMove(Ball ball);
+    internal abstract void PerformSpecialDefensive(Ball ball);
+    internal virtual void SpecialDefensiveBallDetected(Ball ball)
+    {
+        if ((player.Controller.Grounded || player.Controller.WallLeft || player.Controller.WallRight)
+            && ball.TrySpecialBall(player, player.hitDirection))
+        {
+            PerformSpecialDefensive(ball);
+        }
+    }
     #endregion
     #region Special offensif
     public void SpecialOffensive(bool performed)
@@ -109,6 +156,17 @@ public abstract class PlayerCombat : NetworkBehaviour
             SetSpecialOffensive(performed);
         }
     }
+    internal void SpecialOffensiveBallDetected(Ball ball)
+    {
+        if ((player.Controller.Grounded || player.Controller.WallLeft || player.Controller.WallRight)
+            && ball.TrySpecialBall(player, player.hitDirection))
+        {
+            PerformSpecialOffensive(ball);
+        }
+    }
+
+    internal abstract void PerformSpecialOffensive(Ball ball);
+
 
     public void SetSpecialOffensive(bool perfomed)
     {
@@ -118,10 +176,17 @@ public abstract class PlayerCombat : NetworkBehaviour
     {
         return enabled ? specialOffensive.Value : false;
     }
-    internal abstract void SpecialOffensiveMove(Ball ball);
     #endregion
-    #region Lob
-    public void Lob(bool lobbing)
+    #region Control
+    public virtual void ControlBall(Ball ball)
+    {
+        if ((player.Controller.Grounded || player.Controller.WallLeft || player.Controller.WallRight)
+            && ball.TryLobBall(player, player.GetLobDirection(), player.GetLobSpeed()))
+        {
+            ControlMove(ball);
+        }
+    }
+    public void Control(bool lobbing)
     {
         if (IsOwner && enabled)
         {
@@ -138,6 +203,7 @@ public abstract class PlayerCombat : NetworkBehaviour
     {
         return enabled ? lobbing.Value : false;
     }
+    internal abstract void ControlMove(Ball ball);
     #endregion
     #region Move
     public void Move(bool moving)

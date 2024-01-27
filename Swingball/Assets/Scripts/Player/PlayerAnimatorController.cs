@@ -28,7 +28,7 @@ public class PlayerAnimatorController : MonoBehaviour
     {
         animator.SetBool("Attack", current);
     }
-    private void OnControlChanged(bool previous, bool current)
+    protected virtual void OnControlChanged(bool previous, bool current)
     {
         animator.SetBool("Control", current);
     }

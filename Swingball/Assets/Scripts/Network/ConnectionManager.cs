@@ -1,4 +1,5 @@
 using Agones;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,9 +21,17 @@ public class ConnectionManager : MonoBehaviour
     [SerializeField] MatchManager matchManager;
     [SerializeField] PlayerManager playerManager;
 
+    [SerializeField] private ConnectionString ConnectionString { 
+        get {
+            var co = new ConnectionString { Id = new Guid(), Name = PlayerSettings.Name };
+            Debug.Log("Connection string: " + (JsonUtility.ToJson(co))); 
+            return co; 
+        } 
+    }
     [SerializeField] private GameObject playerPrefab;
     [SerializeField] private UNetTransport transport;
     [SerializeField] bool startServerAuto = false;
+    [SerializeField] private CharacterSelectorUi characterSelector;
     private AgonesAlphaSdk agones;
 
 
@@ -137,7 +146,7 @@ public class ConnectionManager : MonoBehaviour
         //if (inputName.text == "") return;
         // Hook up password approval check
         NetworkManager.Singleton.ConnectionApprovalCallback += ApprovalCheck;
-        NetworkManager.Singleton.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes("player01");
+        NetworkManager.Singleton.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes(JsonUtility.ToJson(ConnectionString));
         NetworkManager.Singleton.StartHost();
     }
     void Server()
@@ -147,7 +156,7 @@ public class ConnectionManager : MonoBehaviour
         //if (inputName.text == "") return;
         // Hook up password approval check
         NetworkManager.Singleton.ConnectionApprovalCallback += ApprovalCheck;
-        NetworkManager.Singleton.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes("player01");
+        NetworkManager.Singleton.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes(JsonUtility.ToJson(ConnectionString));
         NetworkManager.Singleton.StartServer();
     }
     void Client()
@@ -158,7 +167,8 @@ public class ConnectionManager : MonoBehaviour
         {
             // Set password ready to send to the server to validate
             transport.ConnectAddress = "127.0.0.1";
-            NetworkManager.Singleton.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes("player01");
+
+            NetworkManager.Singleton.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes(JsonUtility.ToJson(ConnectionString));
             NetworkManager.Singleton.StartClient();
         }
     }
@@ -188,7 +198,7 @@ public class ConnectionManager : MonoBehaviour
         transport.ConnectAddress = gs.ip;
         transport.ConnectPort = gs.port;
 
-        NetworkManager.Singleton.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes("player01");
+        NetworkManager.Singleton.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes(JsonUtility.ToJson(ConnectionString));
         NetworkManager.Singleton.StartClient();
     }
 
@@ -283,9 +293,8 @@ public class ConnectionManager : MonoBehaviour
         if (response.Approved)
         {
             var pos = playerManager.Players.Count == 0 ? playerManager.Spawns[0] : playerManager.Spawns[1];
-
-
-            GameObject go = Instantiate(playerPrefab, pos.position, Quaternion.identity);
+            characterSelector.gameObject.SetActive(false);
+            GameObject go = Instantiate(PlayerSettings.Character, pos.position, Quaternion.identity);
             var networkObject = go.GetComponent<NetworkObject>();
             networkObject.SpawnWithOwnership(clientId, false);
 

@@ -13,7 +13,7 @@ public class WeaponCollider : MonoBehaviour
         Normal,
         Offensive,
         Defensive,
-        Lob,
+        Control,
     }
 
     [SerializeField] LayerMask layermask;
@@ -29,6 +29,8 @@ public class WeaponCollider : MonoBehaviour
     public UnityEvent OffensiveDisabledEvent = new UnityEvent();
     public UnityEvent DefensiveEnabledEvent = new UnityEvent();
     public UnityEvent DefensiveDisabledEvent = new UnityEvent();
+    public UnityEvent ControlEnabledEvent = new UnityEvent();
+    public UnityEvent ControlDisabledEvent = new UnityEvent();
 
     public Player Owner { get => owner; set => owner = value; }
 
@@ -91,51 +93,18 @@ public class WeaponCollider : MonoBehaviour
             {
                 case BallState.Normal:
                     if (owner.Controller.Grounded || owner.Controller.WallLeft || owner.Controller.WallRight)
-                    {
-                        if (ball.TryHitBall(owner, owner.hitDirection))
-                        {
-                            owner.SetSlowMo(true);
-                            ball.OnIdleOverEvent.AddListener(delegate
-                            {
-                                owner.SetSlowMo(false);
-                                owner.SubmitAddSpecialRequestServerRpc(ball.Speed.magnitude);
-                                ball.OnIdleOverEvent.RemoveAllListeners();
-                            });
-                        }
-                    }
+                        owner.Combat.HitBallDetected(ball);
                     else
-                    {
-                        if (ball.TrySmashBall(owner, owner.hitDirection))
-                        {
-                            owner.SetSlowMo(true);
-                            ball.OnIdleOverEvent.AddListener(delegate
-                            {
-                                owner.SetSlowMo(false);
-                                owner.SubmitAddSpecialRequestServerRpc(ball.Speed.magnitude);
-                                ball.OnIdleOverEvent.RemoveAllListeners();
-                            });
-                        }
-                    }
-
+                        owner.Combat.SmashBallDetected(ball);
                     break;
                 case BallState.Offensive:
-                    if ((owner.Controller.Grounded || owner.Controller.WallLeft || owner.Controller.WallRight)
-                        && ball.TrySpecialBall(owner, owner.hitDirection))
-                    {
-                        owner.SpecialOffensiveMove(ball);
-                    }
+                    owner.Combat.SpecialOffensiveBallDetected(ball);
                     break;
                 case BallState.Defensive:
-                    if ((owner.Controller.Grounded || owner.Controller.WallLeft || owner.Controller.WallRight)
-                        && ball.TrySpecialBall(owner, owner.hitDirection))
-                    {
-                        owner.SpecialDefensiveMove(ball);
-                    }
+                    owner.Combat.SpecialDefensiveBallDetected(ball);
                     break;
-                case BallState.Lob:
-                    var dir = owner.GetLobDirection();
-                    var speed = owner.GetLobSpeed();
-                    ball.TryLobBall(owner, owner.GetLobDirection(), owner.GetLobSpeed());
+                case BallState.Control:
+                    owner.Combat.ControlBall(ball);
                     break;
                 default:
                     break;
@@ -182,7 +151,12 @@ public class WeaponCollider : MonoBehaviour
                     DefensiveDisabledEvent.Invoke();
                 break;
             case BallState.Normal:
-            case BallState.Lob:
+            case BallState.Control:
+                if (v)
+                    ControlEnabledEvent.Invoke();
+                else
+                    ControlDisabledEvent.Invoke();
+                break;
             default:
                 break;
         }

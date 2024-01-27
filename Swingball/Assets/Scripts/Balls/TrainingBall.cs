@@ -8,6 +8,8 @@ using UnityEngine.Events;
 
 public class TrainingBall : Ball
 {
+    private bool canHit;
+
     private void Start()
     {
         ChangeColors(oppsColor);
@@ -28,6 +30,7 @@ public class TrainingBall : Ball
     }
     protected override void ChangeOwner(int nb)
     {
+        canHit = false;
         victims.Clear();
         if (state == State.NoOwner)
             IgnoreFloor(true);
@@ -37,28 +40,18 @@ public class TrainingBall : Ball
         //ownerObj = match.Players[0];
 
         ChangeColors(oppsColor);
+
+        StartCoroutine(WaitToHit());
     }
-
-    [ServerRpc(RequireOwnership = false)]
-    protected override void SetBallHitServerRpc(ulong owner, ulong ownerPlayerObject, float timestamp, Vector3 oldPos, Vector3 direction, float idleTime = -1, float speedMultiplier = 1f)
+    IEnumerator WaitToHit()
     {
-
-        ChangeOwner(0);
-        FindNewSpeed(speedMultiplier);
-
-        transform.position = oldPos;
-
-        this.direction = direction;
-        speed = currSpeed * direction;
-
-        SetBallHitClientRpc(this.owner, currSpeed, direction, speed);
-
-        if (idleTime < 0f)
-            SetIdleTime();
-        else
-            SetFixedIdleTime(idleTime);
-
-        SetIdleTimeClientRpc(endIdle, idleTime, startIdleTime);
+        yield return new WaitForSeconds(1f);
+        canHit = true;
+    }
+    protected override bool CheckColision(Collider[] cols)
+    {
+        if (!canHit) return false;
+        return base.CheckColision(cols);
     }
     internal void SetUpOffset(BallOffset offset)
     {

@@ -91,6 +91,7 @@ public class Ball : NetworkBehaviour
     public Color Color { get => spriteFloorTarget.color; set => ChangeColors(value); }
     public ulong Owner { get => owner; set => owner = value; }
     public float CurrSpeed { get => currSpeed; set => currSpeed = value; }
+    public Vector3 Direction { get => direction; }
 
     // Update is called once per frame
     void LateUpdate()
@@ -393,7 +394,6 @@ public class Ball : NetworkBehaviour
         this.ownerObj = null;
         target = null;
         this.owner = owner.OwnerClientId;
-
         desync = true;
         SetBallLobServerRpc(this.owner, owner.NetworkObjectId, Time.time, transform.position, hitDirection, lobSpeed);
         audioSource.PlayOneShot(lobClip);
@@ -437,9 +437,6 @@ public class Ball : NetworkBehaviour
         ChangeOwner(nb);
 
         FindNewSpeed(speedMultiplier);
-
-        var dist = (match.Players[0].transform.position - match.Players[1].transform.position).sqrMagnitude;
-
         transform.position = oldPos;
 
         this.direction = direction;
@@ -464,6 +461,7 @@ public class Ball : NetworkBehaviour
         RemoveOwner(nb);
 
 
+        this.speedMultiplier = 1f;
         currSpeed = lobSpeed;
 
         this.direction = direction;

@@ -4,15 +4,6 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
-enum Action
-{
-    Strike,
-    Lob,
-    Offensive,
-    Defensive,
-    Move,
-    Nothing
-}
 public class NinjaCombat : PlayerCombat
 {
     [Header("Ninja stuff")]
@@ -31,6 +22,7 @@ public class NinjaCombat : PlayerCombat
     [SerializeField] AudioClip mirageClip;
     [SerializeField] AudioClip ultiStartClip;
     [SerializeField] private Action nextMove = Action.Nothing;
+    private bool isInMirage;
 
     private void Start()
     {
@@ -41,6 +33,8 @@ public class NinjaCombat : PlayerCombat
         inputs.StartDefensiveEvent.AddListener(delegate () { nextMove = Action.Defensive; });
         inputs.StartMoveEvent.AddListener(delegate () { nextMove = Action.Nothing; });
         specialOffensive.OnValueChanged += PlaySpecialOffSound;
+
+        player.GetHitEvent.AddListener(delegate { isInMirage = false; });
     }
 
     private void PlaySpecialOffSound(bool previousValue, bool newValue)
@@ -49,17 +43,17 @@ public class NinjaCombat : PlayerCombat
             player.AudioSource.PlayOneShot(ultiStartClip);
     }
 
-    protected override void SetLobSettings()
+    protected override void SetControlSettings()
     {
-        LobSettings = new LobSettings()
+        LobSettings = new ControlSettings()
         {
             Speed = 8f,
             Direction = (hitDirection) => { return (VectorOperation.GetFlatVector(hitDirection).normalized + 4f * Vector3.up).normalized; }
         };
     }
-    internal override void SpecialDefensiveMove(Ball ball)
+    internal override void PerformSpecialDefensive(Ball ball)
     {
-        // Smoke teleport to the air whit with ball
+        // Smoke teleport to the air with ball
         smokeCloud.Play();
         RequestDefensiveMoveServerRpc();
         ball.TryLobBall(player, player.GetLobDirection(), player.GetLobSpeed());
@@ -89,7 +83,7 @@ public class NinjaCombat : PlayerCombat
         player.Controller.NoGravity = false;
     }
 
-    internal override void SpecialOffensiveMove(Ball ball)
+    internal override void PerformSpecialOffensive(Ball ball)
     {
         AskInstanciateFakeBallsServerRpc(ball.NetworkObjectId, player.hitDirection);
     }
@@ -119,8 +113,8 @@ public class NinjaCombat : PlayerCombat
             var isRight = UnityEngine.Random.Range(0, 2) == 0;
 
             var balls = ball.CreateFakeBall(2, new BallOffset[] {
-        new BallOffset{ PositionOffset = Vector3.right, SpeedOffset = isRight ? rotatedR * ball.Speed.magnitude * .33f : rotatedL * ball.Speed.magnitude * .33f},
-        new BallOffset{ PositionOffset = Vector3.right, SpeedOffset = isRight ? rotatedL * ball.Speed.magnitude * .67f : rotatedR * ball.Speed.magnitude * .67f}
+        new BallOffset{ PositionOffset = -transform.right * 2f, SpeedOffset = isRight ? rotatedR * ball.Speed.magnitude * .33f : rotatedL * ball.Speed.magnitude * .33f},
+        new BallOffset{ PositionOffset = transform.right * 2f, SpeedOffset = isRight ? rotatedL * ball.Speed.magnitude * .67f : rotatedR * ball.Speed.magnitude * .67f}
         });
 
             balls.ForEach(b => weapon.AddTouchedBall(b));
@@ -130,6 +124,7 @@ public class NinjaCombat : PlayerCombat
     IEnumerator WaitToStopCheckBall()
     {
         var endTime = Time.time + dashTime;
+        isInMirage = true;
         while (Time.time < endTime)
         {
             var ball = DetectBall();
@@ -161,8 +156,8 @@ public class NinjaCombat : PlayerCombat
             yield return new WaitForEndOfFrame();
         }
         animator.OnBallTouchedDuringMoveAction();
+        isInMirage = false;
     }
-
 
     public override void PerformMoveAction()
     {
@@ -217,8 +212,12 @@ public class NinjaCombat : PlayerCombat
         }
         return null;
     }
-    /*protected override bool CheckIfCanMoveAction()
+
+    internal override void ControlMove(Ball ball)
     {
-        return base.CheckIfCanMoveAction() && ;
-    }*/
+    }
+    /*protected override bool CheckIfCanMoveAction()
+{
+   return base.CheckIfCanMoveAction() && ;
+}*/
 }
