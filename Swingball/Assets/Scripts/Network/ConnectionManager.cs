@@ -21,16 +21,20 @@ public class ConnectionManager : MonoBehaviour
     [SerializeField] MatchManager matchManager;
     [SerializeField] PlayerManager playerManager;
 
-    [SerializeField] private ConnectionString ConnectionString { 
-        get {
-            var co = new ConnectionString { Id = new Guid(), Name = PlayerSettings.Name };
-            Debug.Log("Connection string: " + (JsonUtility.ToJson(co))); 
-            return co; 
-        } 
+    [SerializeField]
+    private ConnectionString ConnectionString
+    {
+        get
+        {
+            var co = new ConnectionString { Id = new Guid(), Name = PlayerSettings.Name, CharacterId = PlayerSettings.CharacterId, Licensed = true};
+            Debug.Log("Connection string: " + (JsonUtility.ToJson(co)));
+            return co;
+        }
     }
     [SerializeField] private GameObject playerPrefab;
     [SerializeField] private UNetTransport transport;
     [SerializeField] bool startServerAuto = false;
+    [SerializeField] bool startHostAuto = false;
     [SerializeField] private CharacterSelectorUi characterSelector;
     private AgonesAlphaSdk agones;
 
@@ -54,6 +58,9 @@ public class ConnectionManager : MonoBehaviour
         }
     }
 
+    public PlayerManager PlayerManager { get { if (playerManager == null) playerManager = FindObjectOfType<PlayerManager>(); return playerManager; } set => playerManager = value; }
+    public MatchManager MatchManager { get { if (matchManager == null) matchManager = FindObjectOfType<MatchManager>(); return matchManager; } set => matchManager = value; }
+
     private void Start()
     {
         ip_address.onSubmit.AddListener(delegate { transport.ConnectAddress = ip_address.text; });
@@ -75,6 +82,10 @@ public class ConnectionManager : MonoBehaviour
 
         if (startServerAuto)
             Server();
+        if (startHostAuto)
+            Host();
+        else
+            PlayerSettings.CharacterId = -1;
     }
     void OnGUI()
     {
@@ -98,23 +109,23 @@ public class ConnectionManager : MonoBehaviour
         else
         {
             Debug.Log(("Server - Failed to connect, exiting"));
-#if UNITY_EDITOR == false
             Application.Quit(1);
-#endif
         }
+        try{
 
-        ok = await agones.Ready();
-        if (ok)
-        {
-            Debug.Log($"Server - Ready");
-            //agones.SetPlayerCapacity(2);
+            ok = await agones.Ready();
+            if (ok)
+            {
+                Debug.Log($"Server - Ready");
+                //agones.SetPlayerCapacity(2);
+            }
+            else
+            {
+                Debug.Log($"Server - Ready failed");
+            }
         }
-        else
-        {
-            Debug.Log($"Server - Ready failed");
-#if UNITY_EDITOR == false
-            Application.Quit();
-#endif
+        catch{
+
         }
     }
 
@@ -140,7 +151,7 @@ public class ConnectionManager : MonoBehaviour
         }
     }
 
-    void Host()
+    public void Host()
     {
 
         //if (inputName.text == "") return;
@@ -208,6 +219,8 @@ public class ConnectionManager : MonoBehaviour
         {
             _ = AddPlayerAndAllocate(clientId);
         }
+        else
+            characterSelector.gameObject.SetActive(false);
 
         // Are we the client that is connecting?
         if (clientId == NetworkManager.Singleton.LocalClientId)
@@ -267,9 +280,10 @@ public class ConnectionManager : MonoBehaviour
 
         // Additional connection data defined by user code
         var connectionData = request.Payload;
-        var playerName = Encoding.Default.GetString(connectionData);
 
-        var gameReturnStatus = GetConnectStatus(playerName);
+
+        var connectionString = JsonUtility.FromJson<ConnectionString>(Encoding.Default.GetString(connectionData));
+        var gameReturnStatus = GetConnectStatus(connectionString);
 
         // Your approval logic determines the following values
         response.Approved = gameReturnStatus == ConnectStatus.Success ? true : false;
@@ -292,13 +306,14 @@ public class ConnectionManager : MonoBehaviour
         response.Pending = false;
         if (response.Approved)
         {
-            var pos = playerManager.Players.Count == 0 ? playerManager.Spawns[0] : playerManager.Spawns[1];
+            var pos = PlayerManager.Players.Count == 0 ? PlayerManager.Spawns[0] : PlayerManager.Spawns[1];
             characterSelector.gameObject.SetActive(false);
-            GameObject go = Instantiate(PlayerSettings.Character, pos.position, Quaternion.identity);
+            var character = characterSelector.Prefabs[connectionString.CharacterId];
+            GameObject go = Instantiate(character, pos.position, Quaternion.identity);
             var networkObject = go.GetComponent<NetworkObject>();
             networkObject.SpawnWithOwnership(clientId, false);
 
-            playerManager.AddPlayer(go.GetComponent<Player>());
+            PlayerManager.AddPlayer(go.GetComponent<Player>());
 
             dict.Add(clientId, networkObject);
 
@@ -331,12 +346,14 @@ public class ConnectionManager : MonoBehaviour
         ServerFull,
         IncompatibleBuildType
     }
-    ConnectStatus GetConnectStatus(string connectionPayload)
+    ConnectStatus GetConnectStatus(ConnectionString connectionPayload)
     {
         if (NetworkManager.Singleton.ConnectedClientsIds.Count >= 2)
         {
             return ConnectStatus.ServerFull;
         }
+        if (!connectionPayload.Licensed)
+            return ConnectStatus.IncompatibleBuildType;
 
         /*if (connectionPayload.isDebug != Debug.isDebugBuild)
         {

@@ -189,7 +189,6 @@ public class MatchManager : NetworkBehaviour
         yield return new WaitForSeconds(1f);
 
         countDownUi.gameObject.SetActive(false);
-        playerManager.EnableControls(true);
     }
 
     private IEnumerator RestartBall(int target = 0)
@@ -200,6 +199,8 @@ public class MatchManager : NetworkBehaviour
         yield return new WaitForSeconds(3f);
 
         InstantiateBall(target);
+
+        playerManager.EnableControls(true);
     }
     private IEnumerator QuickRestartBall(int target = 0, int increment = 0)
     {
@@ -209,6 +210,8 @@ public class MatchManager : NetworkBehaviour
         yield return new WaitForSeconds(3f);
 
         InstantiateBall(target, increment);
+
+        playerManager.EnableControls(true);
     }
     #endregion
     #region Death

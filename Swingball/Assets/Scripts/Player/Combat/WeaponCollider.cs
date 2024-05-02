@@ -25,15 +25,19 @@ public class WeaponCollider : MonoBehaviour
     [SerializeField] private List<Ball> touched = new List<Ball>();
     [SerializeField] private List<Player> playerTouched = new List<Player>();
     private BallState state;
-    public UnityEvent OffensiveEnabledEvent = new UnityEvent();
-    public UnityEvent OffensiveDisabledEvent = new UnityEvent();
-    public UnityEvent DefensiveEnabledEvent = new UnityEvent();
-    public UnityEvent DefensiveDisabledEvent = new UnityEvent();
-    public UnityEvent ControlEnabledEvent = new UnityEvent();
-    public UnityEvent ControlDisabledEvent = new UnityEvent();
+    [HideInInspector] public UnityEvent OffensiveEnabledEvent = new UnityEvent();
+    [HideInInspector] public UnityEvent OffensiveDisabledEvent = new UnityEvent();
+    [HideInInspector] public UnityEvent DefensiveEnabledEvent = new UnityEvent();
+    [HideInInspector] public UnityEvent DefensiveDisabledEvent = new UnityEvent();
+    [HideInInspector] public UnityEvent ControlEnabledEvent = new UnityEvent();
+    [HideInInspector] public UnityEvent ControlDisabledEvent = new UnityEvent();
 
     public Player Owner { get => owner; set => owner = value; }
 
+    public void StopAllEffects()
+    {
+        effects.ForEach(e => e.Reinit());
+    }
     public void StopEffect(int id)
     {
         if (effects.Count > id)
@@ -48,14 +52,6 @@ public class WeaponCollider : MonoBehaviour
     private void Awake()
     {
         owner = GetComponentInParent<Player>();
-    }
-
-    private void LateUpdate()
-    {
-        foreach (var prtl in particles)
-        {
-            //prtl.Simulate(Time.deltaTime, true, false, false);
-        }
     }
 
     private void OnTriggerStay(Collider other)
@@ -74,14 +70,6 @@ public class WeaponCollider : MonoBehaviour
         var isBall = layermask == (layermask | (1 << other.gameObject.layer));
 
         if (!isBall) return;
-
-        /* var victim = other.GetComponentInParent<OnlinePlayer>();
-
-         if(victim && victim != owner && !touched.Contains(victim))
-         {
-             victim.GetHit(damage);
-             touched.Add(victim);
-         }*/
 
         var ball = other.GetComponentInParent<Ball>();
         var player = other.GetComponent<Player>() ;

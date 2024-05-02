@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public class PlayerAnimatorController : MonoBehaviour
 {
@@ -8,7 +9,11 @@ public class PlayerAnimatorController : MonoBehaviour
     protected PlayerController controller;
     Player player;
     protected PlayerCombat combat;
-    [SerializeField] bool[] enableLayer = new bool[3] { true, true, true };
+    [SerializeField] bool[] enableLayer = new bool[4] { true, true, true, true };
+
+    Dictionary<int, float> layerActions = new Dictionary<int, float>();
+
+
 
     private void Awake()
     {
@@ -24,6 +29,10 @@ public class PlayerAnimatorController : MonoBehaviour
         combat.Moving.OnValueChanged += OnMoveChanged;
     }
 
+    internal void ToIdle()
+    {
+        animator.SetTrigger("Idle");
+    }
     private void OnAttackingChanged(bool previous, bool current)
     {
         animator.SetBool("Attack", current);
@@ -104,6 +113,19 @@ public class PlayerAnimatorController : MonoBehaviour
         animator.SetBool("WallRight", controller.WallRight);
         animator.SetBool("WallLeft", controller.WallLeft);
 
+        var actions = layerActions;
+        actions.Keys.ToList().ForEach(k =>
+        {
+            if (enableLayer[k])
+            {
+                var currVal = animator.GetLayerWeight(k);
+                if (currVal != actions[k])
+                    animator.SetLayerWeight(k, Mathf.MoveTowards(currVal, actions[k], 5f * Time.deltaTime));
+                else
+                    layerActions.Remove(k);
+            }
+        });
+
     }
 
     public void EnableLayer(int nb, bool enable)
@@ -112,8 +134,11 @@ public class PlayerAnimatorController : MonoBehaviour
     }
     public void SetLayer(int nb, float value)
     {
-        if (!enableLayer[nb]) return;
-        animator.SetLayerWeight(nb, value);
+        if (!(enableLayer.Length > nb)) return;
+        if (layerActions.ContainsKey(nb))
+            layerActions[nb] = value;
+        else
+            layerActions.Add(nb, value);
     }
     protected virtual bool CanAttack()
     {

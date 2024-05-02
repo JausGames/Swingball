@@ -230,6 +230,18 @@ public abstract class PlayerCombat : NetworkBehaviour
         return nextMoveAction <= Time.time && enabled;
     }
 
+    public virtual void ResetActions()
+    {
+        if (IsOwner)
+        {
+            Lobbing.Value = false;
+            DefensiveMove.Value = false;
+            OffensiveMove.Value = false;
+            Attacking.Value = false;
+            Moving.Value = false;
+        }
+    }
+
     public void SetMoving(bool moving)
     {
         this.moving.Value = moving;

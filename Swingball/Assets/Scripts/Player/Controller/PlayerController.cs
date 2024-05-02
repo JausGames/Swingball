@@ -102,6 +102,7 @@ public class PlayerController : NetworkBehaviour
 
             //machineState.CheckTransitionState();
             //machineState.UpdatePosition();
+            if (isActive)
                 machineState.UpdateRotation();
             //machineState.ControlSpeed();
         }
@@ -227,5 +228,6 @@ public class PlayerController : NetworkBehaviour
     internal void SetSlowMo(bool value)
     {
         body.isKinematic = value;
+        enabled = !value;
     }
 }

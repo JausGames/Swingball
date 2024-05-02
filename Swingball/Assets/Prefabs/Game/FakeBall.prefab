@@ -9917,10 +9917,11 @@ MonoBehaviour:
   hitclip: {fileID: 8300000, guid: 7ed03663517a0ce4086e1fc7ffe2333d, type: 3}
   lobClip: {fileID: 8300000, guid: efb3189cf6a6ae449b52a232bc75a17c, type: 3}
   smashClip: {fileID: 8300000, guid: b9402dc77fc55584fb2f7dd57ac9b01d, type: 3}
-  maxParticleByDistance: 20
   fireSource: {fileID: 3763014464484563037}
-  fireParticles:
-  - {fileID: 6287577965965140013}
+  speedParticles:
+    maxParticleByDistance: 0
+    clip: {fileID: 0}
+    particles: []
   endIdleState: 0
 --- !u!135 &7547369957200171155
 SphereCollider:
@@ -10298,14 +10299,14 @@ AudioSource:
   m_PlayOnAwake: 0
   m_Volume: 0.2
   m_Pitch: 1
-  Loop: 0
+  Loop: 1
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
   Priority: 128
-  DopplerLevel: 1
-  MinDistance: 1
-  MaxDistance: 500
+  DopplerLevel: 0.2
+  MinDistance: 2
+  MaxDistance: 100
   Pan2D: 0
   rolloffMode: 0
   BypassEffects: 0
@@ -10317,12 +10318,21 @@ AudioSource:
     - serializedVersion: 3
       time: 0
       value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
+      inSlope: -4.1894627
+      outSlope: -4.1894627
+      tangentMode: 34
       weightedMode: 0
       inWeight: 0.33333334
       outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.18314919
+      value: 0.23270336
+      inSlope: -0.7960252
+      outSlope: -0.7960252
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.16736977
     - serializedVersion: 3
       time: 1
       value: 0
@@ -10340,7 +10350,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0
+      value: 1
       inSlope: 0
       outSlope: 0
       tangentMode: 0

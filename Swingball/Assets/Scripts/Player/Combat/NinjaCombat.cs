@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.VFX;
 
 public class NinjaCombat : PlayerCombat
 {
@@ -12,6 +13,7 @@ public class NinjaCombat : PlayerCombat
     [SerializeField] NinjaAnimatorController animator;
     [SerializeField] ParticleSystem mirageParticles;
     [SerializeField] SkinnedMeshRenderer meshRenderer;
+    [SerializeField] VisualEffect lightningVFX;
     [Header("Defensive move")]
     [SerializeField] float floatTime = .4f;
     [Header("Move action")]
@@ -24,6 +26,18 @@ public class NinjaCombat : PlayerCombat
     [SerializeField] private Action nextMove = Action.Nothing;
     private bool isInMirage;
 
+    public bool IsInMirage { get => isInMirage; 
+        set 
+        { 
+            isInMirage = value;
+            PlayMirageParticles(value);
+            PlayMirageParticlesServerRpc(value);
+            player.Controller.enabled = !value;
+        } 
+    }
+
+    //private bool isInMirage;
+
     private void Start()
     {
         animator = GetComponent<NinjaAnimatorController>();
@@ -34,7 +48,22 @@ public class NinjaCombat : PlayerCombat
         inputs.StartMoveEvent.AddListener(delegate () { nextMove = Action.Nothing; });
         specialOffensive.OnValueChanged += PlaySpecialOffSound;
 
-        player.GetHitEvent.AddListener(delegate { isInMirage = false; });
+        player.GetHitEvent.AddListener(delegate
+        {
+            if (isInMirage)
+            {
+                Move(false);
+                IsInMirage = false;
+            };
+        });
+    }
+
+    public override void ResetActions()
+    {
+        base.ResetActions();
+        IsInMirage = false;
+        weapon.StopAllEffects();
+        animator.ToIdle();
     }
 
     private void PlaySpecialOffSound(bool previousValue, bool newValue)
@@ -95,7 +124,7 @@ public class NinjaCombat : PlayerCombat
 
         ball.TryHitBall(player, direction);
 
-        weapon.StartEffect(3);
+        lightningVFX.Play();
 
         player.SetSlowMo(true);
         ball.OnIdleOverEvent.AddListener(delegate
@@ -121,43 +150,6 @@ public class NinjaCombat : PlayerCombat
         });
 
     }
-    IEnumerator WaitToStopCheckBall()
-    {
-        var endTime = Time.time + dashTime;
-        isInMirage = true;
-        while (Time.time < endTime)
-        {
-            var ball = DetectBall();
-            if (ball)
-            {
-                switch (nextMove)
-                {
-                    case Action.Strike:
-                    case Action.Offensive:
-                        if (player.Controller.Grounded)
-                            ball.TryHitBall(player, player.hitDirection);
-                        else if (!player.Controller.Grounded)
-                            ball.TrySmashBall(player, player.hitDirection);
-                        break;
-                    case Action.Lob:
-                    case Action.Defensive:
-                        ball.TryLobBall(player, player.GetLobDirection(), player.GetLobSpeed());
-                        break;
-                    default:
-                    case Action.Move:
-                    case Action.Nothing:
-                        //ball.RequestIdleTimeServerRpc(slowtime, false, Ball.State.NoOwner);
-                        break;
-                }
-                /*animator.OnBallTouchedDuringMoveAction();
-                player.Controller.enabled = true;*/
-                break;
-            }
-            yield return new WaitForEndOfFrame();
-        }
-        animator.OnBallTouchedDuringMoveAction();
-        isInMirage = false;
-    }
 
     public override void PerformMoveAction()
     {
@@ -168,10 +160,40 @@ public class NinjaCombat : PlayerCombat
 
         Moving.Value = false;
         StartCoroutine(WaitToStopCheckBall());
-        PlayMirageParticles(true);
-        PlayMirageParticlesServerRpc(true);
     }
-    [ServerRpc]
+    IEnumerator WaitToStopCheckBall()
+    {
+        var endTime = Time.time + dashTime;
+        IsInMirage = true;
+        while (Time.time < endTime && isInMirage)
+        {
+            var ball = DetectBall();
+            if (ball)
+            {
+                switch (nextMove)
+                {
+                    case Action.Strike:
+                        HitBallDetected(ball);
+                        IsInMirage = false;
+                        animator.OnBallTouchedDuringMoveAction();
+                        break;
+                    case Action.Lob:
+                    case Action.Defensive:
+                        ControlBall(ball);
+                        IsInMirage = false;
+                        animator.OnBallTouchedDuringMoveAction();
+                        break;
+                    default:
+                    case Action.Move:
+                    case Action.Nothing:
+                        break;
+                }
+            }
+            yield return new WaitForEndOfFrame();
+        }
+        IsInMirage = false;
+    }
+    [ServerRpc(RequireOwnership = false)]
     public void PlayMirageParticlesServerRpc(bool play)
     {
         PlayMirageParticlesClientRpc(play);

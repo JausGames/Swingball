@@ -1,11 +1,19 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Rendering.HighDefinition;
 
+[Serializable]
+public class MultiplerParticles
+{
+    [SerializeField] public float maxParticleByDistance;
+    [SerializeField] public AudioClip clip;
+    [SerializeField] public List<ParticleSystem> particles;
+}
 public class Ball : NetworkBehaviour
 {
     public enum State
@@ -64,9 +72,8 @@ public class Ball : NetworkBehaviour
     [SerializeField] private AudioClip smashClip;
 
     [Header("SVFX - Fire")]
-    [SerializeField] private float maxParticleByDistance;
-    [SerializeField] private AudioSource fireSource;
-    [SerializeField] private List<ParticleSystem> fireParticles;
+    [SerializeField] public AudioSource fireSource;
+    [SerializeField] private MultiplerParticles speedParticles;
 
     private UnityEvent onIdleOverEvent = new UnityEvent();
     private Rigidbody body;
@@ -92,6 +99,19 @@ public class Ball : NetworkBehaviour
     public ulong Owner { get => owner; set => owner = value; }
     public float CurrSpeed { get => currSpeed; set => currSpeed = value; }
     public Vector3 Direction { get => direction; }
+    public MultiplerParticles SpeedParticles { get => speedParticles; 
+        set
+        {
+            var particles = speedParticles.particles;
+            particles.ForEach(p => Destroy(p));
+            speedParticles.particles.Clear();
+            speedParticles.maxParticleByDistance = value.maxParticleByDistance;
+            speedParticles.clip = value.clip;
+            fireSource.clip = speedParticles.clip;
+            fireSource.Play();
+            speedParticles.particles.AddRange(value.particles.Select(p => Instantiate(p, transform)));
+        } 
+    }
 
     // Update is called once per frame
     void LateUpdate()
@@ -207,11 +227,12 @@ public class Ball : NetworkBehaviour
     [ClientRpc]
     private void UpdateVfxClientRpc(float speedMultiplier)
     {
-        fireParticles.ForEach(p =>
+        speedParticles.particles.ForEach(p =>
         {
             var em = p.emission;
-            em.rateOverDistanceMultiplier = (speedMultiplier - 1f) * maxParticleByDistance;
-            fireSource.volume = (speedMultiplier - 1f) / 3f * .5f;
+            em.rateOverDistanceMultiplier = (speedMultiplier - 1f) * speedParticles.maxParticleByDistance;
+            fireSource.clip = speedParticles.clip;
+            fireSource.volume = (speedMultiplier - 1f) / 3f * .05f;
         });
     }
 
@@ -247,29 +268,6 @@ public class Ball : NetworkBehaviour
     {
         PlayBallHit();
     }
-
-    /*private void OnCollisionEnter(Collision collision)
-    {
-        *//*private void OnTriggerEnter(Collider other)
-        {*//*
-        //if (!IsServer) return;
-        Debug.Log("Ball, OnColisionEnter : collider = " + collision.collider);
-        CheckCollision(collision);
-    }
-
-    protected virtual void CheckCollision(Collision collision)
-    {
-        if (state == State.NoOwner) return;
-
-        var pl = collision.collider.GetComponent<Player>();
-
-        if (pl && pl.IsOwner && !victims.Contains(pl))
-        {
-            if (pl == ownerObj) return;
-            pl.GetHit(currSpeed * damageMult);
-            victims.Add(pl);
-        }
-    }*/
 
     internal void SetUpBall(MatchManager matchManager, int target, int increment)
     {
@@ -312,7 +310,7 @@ public class Ball : NetworkBehaviour
         //ChangeOwnerClientRpc(target);
     }
 
-    protected virtual void ChangeOwner(int nb)
+    protected virtual Player ChangeOwner(int nb)
     {
         victims.Clear();
         if (state == State.NoOwner)
@@ -322,10 +320,11 @@ public class Ball : NetworkBehaviour
         owner = match.Players[nb].OwnerClientId;
         ownerObj = match.Players[nb];
 
-        if (IsServer && !IsHost) return;
+        if (IsServer && !IsHost) return ownerObj;
 
         ChangeColors(ownerObj.IsOwner ? selfColor : oppsColor);
 
+        return ownerObj;
     }
 
 
@@ -434,9 +433,11 @@ public class Ball : NetworkBehaviour
     protected virtual void SetBallHitServerRpc(ulong owner, ulong ownerPlayerObject, float timestamp, Vector3 oldPos, Vector3 direction, float idleTime = -1f, float speedMultiplier = 1f)
     {
         var nb = owner == match.Players[0].OwnerClientId ? 0 : 1;
-        ChangeOwner(nb);
+        var player = ChangeOwner(nb);
 
         FindNewSpeed(speedMultiplier);
+        if (speedMultiplier > 1f)
+            SpeedParticles = player.SpeedMultiplierParicles;
         transform.position = oldPos;
 
         this.direction = direction;
@@ -476,9 +477,11 @@ public class Ball : NetworkBehaviour
     private void SetBallSmashServerRpc(ulong owner, ulong ownerPlayerObject, float timestamp, Vector3 oldPos, Vector3 direction, float speedMultiplier = 1f)
     {
         var nb = owner == match.Players[0].OwnerClientId ? 0 : 1;
-        ChangeOwner(nb);
+        var player = ChangeOwner(nb);
 
         FindNewSmashSpeed(speedMultiplier);
+        if (speedMultiplier > 1f)
+            SpeedParticles = player.SpeedMultiplierParicles;
 
         transform.position = oldPos;
 
@@ -602,6 +605,7 @@ public class Ball : NetworkBehaviour
     protected void SetBallHitClientRpc(ulong owner, float currSpeed, Vector3 direction, Vector3 speed)
     {
         var nb = owner == match.Players[0].OwnerClientId ? 0 : 1;
+        var player = ChangeOwner(nb);
 
         this.currSpeed = currSpeed;
         this.direction = direction;
@@ -609,6 +613,8 @@ public class Ball : NetworkBehaviour
 
         ChangeOwner(nb);
         nextClip = hitclip;
+
+            SpeedParticles = player.SpeedMultiplierParicles;
     }
 
     private void PlayBallHit()
@@ -652,6 +658,7 @@ public class Ball : NetworkBehaviour
     private void SetBallSmashClientRpc(ulong owner, float currSpeed, Vector3 direction, Vector3 speed)
     {
         var nb = owner == match.Players[0].OwnerClientId ? 0 : 1;
+        var player = ChangeOwner(nb);
 
         this.currSpeed = currSpeed;
         this.direction = direction;
@@ -659,6 +666,8 @@ public class Ball : NetworkBehaviour
 
         ChangeOwner(nb);
         nextClip = smashClip;
+
+            SpeedParticles = player.SpeedMultiplierParicles;
     }
 
 

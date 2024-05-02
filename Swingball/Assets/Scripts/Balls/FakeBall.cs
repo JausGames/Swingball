@@ -59,20 +59,21 @@ public class FakeBall : Ball
         return false;
     }
 
-    protected override void ChangeOwner(int nb)
+    protected override Player ChangeOwner(int nb)
     {
         if (match.Players.Count == 1)
         {
 
-        victims.Clear();
-        if (state == State.NoOwner)
-            IgnoreFloor(true);
+            victims.Clear();
+            if (state == State.NoOwner)
+                IgnoreFloor(true);
 
-        target = match.Players[0];
-        owner = match.Players[0].OwnerClientId;
-        //ownerObj = match.Players[0];
+            target = match.Players[0];
+            owner = match.Players[0].OwnerClientId;
+            //ownerObj = match.Players[0];
 
-        ChangeColors(oppsColor);
+            ChangeColors(oppsColor);
+            return target;
         }
         else
         {
@@ -84,16 +85,17 @@ public class FakeBall : Ball
             owner = match.Players[nb].OwnerClientId;
             ownerObj = match.Players[nb];
 
-            if (IsServer && !IsHost) return;
+            if (IsServer && !IsHost) return ownerObj;
 
             ChangeColors(ownerObj.IsOwner ? selfColor : oppsColor);
+            return ownerObj;
         }
 
     }
     [ServerRpc(RequireOwnership = false)]
     public void AskForDespawnServerRpc()
     {
-        if(this.GetComponent<NetworkObject>() && this.GetComponent<NetworkObject>().IsSpawned)
+        if (this.GetComponent<NetworkObject>() && this.GetComponent<NetworkObject>().IsSpawned)
         {
             renderer.enabled = false;
             PlayDeadParticlesClientRpc();
@@ -104,7 +106,7 @@ public class FakeBall : Ball
     IEnumerator WaitToKill()
     {
         yield return new WaitForSeconds(.2f);
-        if(GetNetworkObject(NetworkObjectId) != null)
+        if (GetNetworkObject(NetworkObjectId) != null)
             GetNetworkObject(NetworkObjectId).Despawn();
     }
 

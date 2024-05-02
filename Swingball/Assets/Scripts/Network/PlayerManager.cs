@@ -59,8 +59,12 @@ public class PlayerManager : NetworkBehaviour
             if (pl.IsOwner)
             {
                 pl.SetControls(value);
-                if(true)
+                if (true)
+                {
                     pl.DeadFromFalling = false;
+                    pl.Combat.enabled = true;
+                    pl.Controller.enabled = true;
+                }
             }
         }
     }

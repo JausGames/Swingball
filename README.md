@@ -11,9 +11,13 @@ Sound FX :
 # INFRA
 
 ## Build images : 
-`docker build --target GameServer -t jausseran/swingballserver .` 
-`docker build --target MatchMakingAPI -t jausseran/mmapi .` 
+```
+docker build --target GameServer -t jausseran/swingballserver . 
+docker image push jausseran/swingballserver
 
+docker build --target MatchMakingAPI -t jausseran/mmapi .
+docker image push jausseran/mmapi
+```
 ## Run API local: 
 `docker run -d jausseran/mmapi -n mmapi` 
 

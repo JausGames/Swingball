@@ -8,8 +8,6 @@ public class NinjaAnimatorController : PlayerAnimatorController
     {
         if (!combat.IsOwner) return;
         controller.Body.velocity = controller.Body.velocity.normalized * 4f;
-        ((NinjaCombat)combat).PlayMirageParticles(false);
         ((NinjaCombat)combat).Moving.Value = false;
-        ((NinjaCombat)combat).PlayMirageParticlesServerRpc(false);
     }
 }

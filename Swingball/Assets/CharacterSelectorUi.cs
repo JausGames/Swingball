@@ -8,7 +8,9 @@ public class CharacterSelectorUi : MonoBehaviour
     [SerializeField] List<GameObject> prefabs = new List<GameObject>();
     [SerializeField] Transform gridUi;
     [SerializeField] GameObject buttonPrefab;
-    [SerializeField] Camera dummyCamera;
+    [SerializeField] Transform dummyContainer;
+
+    public List<GameObject> Prefabs { get => prefabs; set => prefabs = value; }
 
     //public GameObject CurrentCharacter { get; set; }
 
@@ -21,23 +23,23 @@ public class CharacterSelectorUi : MonoBehaviour
             var btn = obj.GetComponent<CharacterSelectorButton>();
             btn.Prefab = p;
             var prefab = btn.Prefab;
+            var id = prefabs.FindIndex(0 , prefabs.Count, o => o == p);
             btn.Button.onClick.AddListener(delegate
             {
-                if (PlayerSettings.Character != prefab)
+                if (PlayerSettings.CharacterId != id)
                 {
-                    PlayerSettings.Character = prefab;
+                    PlayerSettings.CharacterId = id;
 
-                    if (dummyCamera.transform.childCount > 0)
-                        for(int i = 0; i < dummyCamera.transform.childCount; i++) 
-                            Destroy(dummyCamera.transform.GetChild(0).gameObject);
+                    if (dummyContainer.transform.childCount > 0)
+                        for(int i = 0; i < dummyContainer.transform.childCount; i++) 
+                            Destroy(dummyContainer.transform.GetChild(0).gameObject);
 
                     var player = prefab.GetComponent<Player>();
 
-                    var obj = Instantiate(player.DummySelector, dummyCamera.transform);
+                    var obj = Instantiate(player.DummySelector, dummyContainer.transform);
                 }
             });
         });
-
 
     }
 }

@@ -1,10 +1,12 @@
 using Cinemachine;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
+using UnityEngine.VFX;
 
 [System.Serializable]
 public class PlayerGameInfo
@@ -18,30 +20,54 @@ public class PlayerGameInfo
 
 public class Player : NetworkBehaviour
 {
+    [Header("Components")]
     PlayerController controller;
     PlayerCombat combat;
     [SerializeField] Arrow arrow;
+    [SerializeField] public GameObject DummySelector;
 
+    [Header("VFX")]
+    [SerializeField] MultiplerParticles speedMultiplierParicles;
     [SerializeField] ParticleSystem bloodParticle;
-    float maxHealth = 100f;
-    public NetworkVariable<float> health = new NetworkVariable<float>(100f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
-    public NetworkVariable<float> special = new NetworkVariable<float>(100f, NetworkVariableReadPermission.Owner, NetworkVariableWritePermission.Server);
-    public NetworkVariable<bool> isDead = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
-    private bool isFalling;
-    private bool isDying;
-    private UnityEvent dieEvent = new UnityEvent();
-    private UnityEvent resurectEvent = new UnityEvent();
+
+    [SerializeField] public List<ParticleSystem> AllParticles = new List<ParticleSystem>();
+    [SerializeField] public List<ParticleSystem> stopedParticles = new List<ParticleSystem>();
+
+    [SerializeField] public List<VisualEffect> AllVfx = new List<VisualEffect>();
+    [SerializeField] public List<VisualEffect> stopedVfx = new List<VisualEffect>();
+
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioLowPassFilter lowPass;
+
+    [Header("UI")]
     [SerializeField] private HealthBar healthbar;
     [SerializeField] private HealthBar specialbar;
     [SerializeField] HealthBar moveActionBar;
     [SerializeField] Transform lookAtTransform;
+    [SerializeField] private Sprite image;
 
+    float maxHealth = 100f;
+    [HideInInspector] public NetworkVariable<float> health = new NetworkVariable<float>(100f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    [HideInInspector] public NetworkVariable<float> special = new NetworkVariable<float>(100f, NetworkVariableReadPermission.Owner, NetworkVariableWritePermission.Server);
+    [HideInInspector] public NetworkVariable<bool> isDead = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    private bool isFalling;
+    private bool isDying;
+    private UnityEvent dieEvent = new UnityEvent();
+    private UnityEvent resurectEvent = new UnityEvent();
 
-    [SerializeField] private bool isResurecting = false;
+    private bool isResurecting = false;
     internal bool isHurt;
     private bool deadFromFalling;
     private bool slowMotion;
     private bool invincible = false;
+
+    private Ball ball;
+    private bool isTraining = false;
+    private bool gettingUp;
+
+    [HideInInspector]
+    public UnityEvent GetHitEvent = new UnityEvent();
+
 
     public bool IsFalling { get => isFalling; set => isFalling = value; }
     public bool IsDying { get => isDying; set => isDying = value; }
@@ -53,30 +79,20 @@ public class Player : NetworkBehaviour
     public float MaxHealth { get => maxHealth; set => maxHealth = value; }
     public bool IsHurt { get => isHurt; set => isHurt = value; }
 
+
+
+
+
+
     /// <summary>
     /// Special is server write only, call the method from server RPC
     /// </summary>
     /// <param name="value">Amount to remove from special points</param>
     internal void RemoveSpecialPoints(float value)
     {
-        if(!isTraining)
+        if (!isTraining)
             special.Value = Mathf.Max(0, special.Value - value);
     }
-
-    [SerializeField] private AudioSource audioSource;
-
-
-    [SerializeField] private AudioLowPassFilter lowPass;
-    private Ball ball;
-    private bool isTraining = false;
-    private bool gettingUp;
-
-    [HideInInspector]
-    public UnityEvent GetHitEvent = new UnityEvent();
-
-    [Header("Selector ui")]
-    [SerializeField] private Sprite image;
-    [SerializeField] public GameObject DummySelector;
 
     public Vector3 hitDirection
     {
@@ -90,6 +106,40 @@ public class Player : NetworkBehaviour
 
     internal void SetSlowMo(bool v)
     {
+        if (v)
+        {
+            stopedParticles.Clear();
+            AllParticles.ForEach(p =>
+            {
+                if (p.isPlaying)
+                {
+                    p.Pause();
+                    stopedParticles.Add(p);
+                }
+            });
+            /*stopedVfx.Clear();
+            AllVfx.ForEach(p =>
+            {
+                if (p.HasAnySystemAwake())
+                {
+                    p.pause = true;
+                    stopedVfx.Add(p);
+                }
+            });*/
+        }
+        else
+        {
+            stopedParticles.ForEach(p =>
+            {
+                p.Play();
+                p.Stop();
+            });
+            /*stopedVfx.ForEach(p =>
+            {
+
+                p.pause = false;
+            });*/
+        }
         controller.SetSlowMo(v);
         slowMotion = v;
     }
@@ -105,6 +155,7 @@ public class Player : NetworkBehaviour
     public bool GettingUp { get => gettingUp; set => gettingUp = value; }
     public bool IsTraining { get => isTraining; set => isTraining = value; }
     public Sprite Image { get => image; set => image = value; }
+    public MultiplerParticles SpeedMultiplierParicles { get => speedMultiplierParicles; set => speedMultiplierParicles = value; }
 
     private void Update()
     {
@@ -117,7 +168,7 @@ public class Player : NetworkBehaviour
 
         if (!moveActionBar) return;
         var v = Mathf.Clamp((combat.MoveActionCooldown - combat.NextMoveAction + Time.time) / combat.MoveActionCooldown, 0f, 1f) * 100f;
-        if(v != moveActionBar.Value)
+        if (v != moveActionBar.Value)
             moveActionBar.SetHealth(v);
     }
     private void Start()
@@ -160,7 +211,7 @@ public class Player : NetworkBehaviour
     {
         if (isOffensive && combat.OffensiveMoveValue <= special.Value)
             return true;
-        else if(!isOffensive && combat.DefensiveMoveValue <= special.Value)
+        else if (!isOffensive && combat.DefensiveMoveValue <= special.Value)
             return true;
 
         return false;
@@ -183,6 +234,18 @@ public class Player : NetworkBehaviour
             var cine = FindObjectOfType<CinemachineOrbitalTransposer>();
             cine.m_XAxis.Value = rotation.y;
         }
+        ResetCurrentActionsPlayer();
+    }
+
+    private void ResetCurrentActionsPlayer()
+    {
+        isFalling = false;
+        isDying = false;
+        isHurt = false;
+        deadFromFalling = false;
+        slowMotion = false;
+        invincible = false;
+        combat.ResetActions();
     }
 
     internal void PlayerTouched(Player player, WeaponCollider.BallState state)
@@ -271,10 +334,10 @@ public class Player : NetworkBehaviour
             health.Value = Mathf.Max(health.Value - damage, 0f);
         if (health.Value == 0)
             Die();
-        
+
         else
             ClientPlayHitClientRpc();
-        
+
         ClientPlayBloodParticleClientRpc();
     }
     [ServerRpc(RequireOwnership = false)]

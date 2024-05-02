@@ -60,8 +60,8 @@ spec:
             image: jausseran/swingballserver:latest
             resources:
               requests:
-                memory: 128Mi
-                cpu: 128m
+                memory: "4Gi"  # Request 4 GB of memory
+                cpu: "2"       # Request 2 vCPUs
               limits:
-                memory: 1024Mi
-                cpu: 512m
+                memory: "8Gi"  # Limit to 8 GB of memory
+                cpu: "4"       # Limit to 4 vCPUs

@@ -4,7 +4,7 @@ WORKDIR /Swingball
 
 COPY Builds/Server/ ./
 
-RUN apt install libvulkan1
+RUN apt update && apt install libvulkan1
 
 # workaround
 # wait until the sidecar is ready

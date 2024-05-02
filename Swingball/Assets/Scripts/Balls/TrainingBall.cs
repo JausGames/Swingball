@@ -28,7 +28,7 @@ public class TrainingBall : Ball
         //this.ownerObj = owner;
         target = match.Players[0];
     }
-    protected override void ChangeOwner(int nb)
+    protected override Player ChangeOwner(int nb)
     {
         canHit = false;
         victims.Clear();
@@ -42,6 +42,8 @@ public class TrainingBall : Ball
         ChangeColors(oppsColor);
 
         StartCoroutine(WaitToHit());
+
+        return target;
     }
     IEnumerator WaitToHit()
     {

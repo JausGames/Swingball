@@ -3,6 +3,7 @@ using System;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.EventSystems;
 
 public class OnlinePlayerInputs : NetworkBehaviour
 {
@@ -70,40 +71,58 @@ public class OnlinePlayerInputs : NetworkBehaviour
 
     private void SetAttack(bool v)
     {
-        if (special)
+        if (EventSystem.current.IsPointerOverGameObject())
         {
-            if (v)
-                StartOffensiveEvent.Invoke();
-            else
-                StopOffensiveEvent.Invoke();
+            Cursor.lockState = CursorLockMode.None;
+
         }
-        //combat.SpecialOffensive(v);
         else
         {
-            if (v)
-                StartAttackEvent.Invoke();
+            Cursor.lockState = CursorLockMode.Locked;
+            if (special)
+            {
+                if (v)
+                    StartOffensiveEvent.Invoke();
+                else
+                    StopOffensiveEvent.Invoke();
+            }
+            //combat.SpecialOffensive(v);
             else
-                StopAttackEvent.Invoke();
+            {
+                if (v)
+                    StartAttackEvent.Invoke();
+                else
+                    StopAttackEvent.Invoke();
+            }
+            //combat.Attack(v);
         }
-        //combat.Attack(v);
     }
     private void SetDefense(bool v)
     {
-        if (special)
+        if (EventSystem.current.IsPointerOverGameObject())
         {
-            if (v)
-                StartDefensiveEvent.Invoke();
-            else
-                StopDefensiveEvent.Invoke();
+            Cursor.lockState = CursorLockMode.None;
         }
-        //combat.SpecialDefensive(v);
         else
         {
-            if (v)
-                StartLobEvent.Invoke();
+            Cursor.lockState = CursorLockMode.Locked;
+            if (special)
+            {
+                if (v)
+                    StartDefensiveEvent.Invoke();
+                else
+                    StopDefensiveEvent.Invoke();
+            }
+            //combat.SpecialDefensive(v);
             else
-                StopLobEvent.Invoke();
+            {
+                if (v)
+                    StartLobEvent.Invoke();
+                else
+                    StopLobEvent.Invoke();
+            }
         }
+
         //combat.Lob(v);
     }
 }

@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class KnightCombat : PlayerCombat
 {
-    [SerializeField] private float trapUpwardForce = 8f;
+    [SerializeField] private float trapUpwardForce = 12f;
     [SerializeField] private float trapTime = .8f;
 
     [SerializeField] WeaponCollider baseWeaponCollider;
@@ -18,8 +18,10 @@ public class KnightCombat : PlayerCombat
     [SerializeField] PlayerAnimationEvent playerEvent;
 
     [SerializeField] List<ParticleSystem> invicibleParticles;
+
     [SerializeField] List<ParticleSystem> enableHolyWeaponParticles;
     [SerializeField] List<ParticleSystem> enableHolyTrapParticles;
+
     [SerializeField] List<ParticleSystem> showTrapZoneParticles;
 
     [SerializeField] List<ParticleSystem> parryParticles;
@@ -27,7 +29,7 @@ public class KnightCombat : PlayerCombat
     [SerializeField] float currentSpeedModifier = 1f;
     private KnightAnimatorController animator;
     private float startGuardTime = 0f;
-    private float parryTime = .1f;
+    private float parryTime = .2f;
 
     public bool Blocking { get; private set; }
 
@@ -38,12 +40,29 @@ public class KnightCombat : PlayerCombat
 
         playerEvent.OffensiveEnabledEvent.AddListener(delegate { EnableHolyWeapon(true); });
         playerEvent.OffensiveDisabledEvent.AddListener(delegate { EnableHolyWeapon(false); });
+
         playerEvent.DefensiveEnabledEvent.AddListener(delegate { EnableHolyTrap(true); });
         playerEvent.DefensiveDisabledEvent.AddListener(delegate { EnableHolyTrap(false); });
 
-        baseWeaponCollider.ControlEnabledEvent.AddListener(delegate { startGuardTime = Time.time + parryTime; parryParticles.ForEach(p => p.Play()); });
+        WeaponColliders[3].ControlEnabledEvent.AddListener(delegate { startGuardTime = Time.time + parryTime; parryParticles.ForEach(p => p.Play()); });
+        WeaponColliders[3].ControlDisabledEvent.AddListener(delegate { parryParticles.ForEach(p => p.Stop()); });
     }
 
+    public override void ResetActions()
+    {
+        base.ResetActions();
+        baseWeaponCollider.StopAllEffects();
+        holyWeaponCollider.StopAllEffects();
+        holyTrapCollider.StopAllEffects();
+
+        invicibleParticles.ForEach(p => p.Stop());
+        enableHolyWeaponParticles.ForEach(p => p.Stop());
+        enableHolyTrapParticles.ForEach(p => p.Stop());
+        showTrapZoneParticles.ForEach(p => p.Stop());
+        parryParticles.ForEach(p => p.Stop());
+
+        animator.ToIdle();
+    }
     private void EnableHolyTrap(bool value)
     {
         baseWeapon.SetActive(!value);
@@ -55,6 +74,7 @@ public class KnightCombat : PlayerCombat
             enableHolyTrapParticles.ForEach(p => p.Stop());
         }
     }
+
 
     private void EnableHolyWeapon(bool value)
     {
